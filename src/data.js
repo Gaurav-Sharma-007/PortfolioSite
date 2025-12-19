@@ -156,6 +156,19 @@ export const portfolioData = {
       stats: [{ label: "Precision", value: 89, suffix: "%" }]
     },
     {
+      id: 9,
+      title: "AI-Powered MCQ Generator",
+      description: "Automated Flask web app using Gemini AI to generate structured MCQs from uploaded documents (PDF/DOCX).",
+      tech: ["Generative AI", "Flask", "Python", "Gemini API"],
+      image: "https://via.placeholder.com/600x400?text=MCQ+Generator",
+      liveUrl: "#",
+      repoUrl: "#",
+      stats: [
+        { label: "Options Gen.", value: 4, suffix: "", prefix: "" },
+        { label: "Formats", value: 3, suffix: "", prefix: "" }
+      ]
+    },
+    {
       id: 8,
       title: "YouTube Ad View Prediction",
       description: "Forecasted ad views for Internship Studio using regression analysis.",

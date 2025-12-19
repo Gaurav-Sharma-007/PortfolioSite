@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useScrollAnimation } from '../hooks/useScrollAnimation';
-import { AlzheimerViz, ChurnViz, SharePointViz, TitanicViz, MovieViz, MusicViz, DiabetesViz, YoutubeViz } from './ProjectAnimations';
+import { AlzheimerViz, ChurnViz, SharePointViz, TitanicViz, MovieViz, MusicViz, DiabetesViz, YoutubeViz, McqViz } from './ProjectAnimations';
 
 import Counter from './Counter';
 
@@ -38,6 +38,7 @@ const ProjectCard = ({ project, index }) => {
     if (project.title.includes('Music')) return <MusicViz />;
     if (project.title.includes('Diabetes')) return <DiabetesViz />;
     if (project.title.includes('YouTube')) return <YoutubeViz />;
+    if (project.title.includes('MCQ')) return <McqViz />;
     return null;
   };
 

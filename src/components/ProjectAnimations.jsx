@@ -625,3 +625,94 @@ export const YoutubeViz = () => {
     }, []);
     return <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} />;
 };
+
+export const McqViz = () => {
+    const canvasRef = useRef(null);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let animationId;
+
+        const init = () => {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        };
+        init();
+        window.addEventListener('resize', init);
+
+        let tick = 0;
+        let scanY = 0;
+
+        const render = () => {
+            ctx.fillStyle = '#0f172a'; // Dark blue-grey
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            tick++;
+
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+
+            // Document Icon
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.roundRect(cx - 30, cy - 40, 60, 80, 5);
+            ctx.fill();
+
+            // Text Lines on Doc
+            ctx.fillStyle = '#ccc';
+            ctx.fillRect(cx - 20, cy - 30, 40, 5);
+            ctx.fillRect(cx - 20, cy - 15, 40, 5);
+            ctx.fillRect(cx - 20, cy - 0, 30, 5);
+
+            // Scanning Beam
+            scanY = (scanY + 2) % 100;
+            ctx.fillStyle = 'rgba(99, 102, 241, 0.5)'; // Indigo scan
+            ctx.fillRect(cx - 35, cy - 45 + scanY, 70, 5);
+
+            // Brain/AI Pulse
+            if (tick % 60 < 20) {
+                ctx.beginPath();
+                ctx.arc(cx, cy - 60, 10 + Math.sin(tick * 0.5) * 5, 0, Math.PI * 2);
+                ctx.fillStyle = '#00ff88';
+                ctx.fill();
+            }
+
+            // Pop out MCQ Cards
+            if (tick % 120 > 60) {
+                const drawCard = (idx, text) => {
+                    const angle = (idx / 4) * Math.PI * 2;
+                    const r = 60;
+                    const x = cx + Math.cos(angle + tick * 0.02) * r;
+                    const y = cy + Math.sin(angle + tick * 0.02) * r;
+
+                    ctx.fillStyle = '#1e293b';
+                    ctx.beginPath();
+                    ctx.arc(x, y, 15, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 12px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(text, x, y);
+                };
+                drawCard(0, 'A');
+                drawCard(1, 'B');
+                drawCard(2, 'C');
+                drawCard(3, 'D');
+            }
+
+            animationId = requestAnimationFrame(render);
+        };
+        render();
+
+        return () => {
+            window.removeEventListener('resize', init);
+            cancelAnimationFrame(animationId);
+        };
+    }, []);
+
+    return <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} />;
+};
