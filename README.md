@@ -1,16 +1,56 @@
-# React + Vite
+# Gaurav Sharma - Premium Portfolio
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A high-performance, interactive portfolio website built with **React** and **Vite**, featuring a premium "Space/Sci-Fi" aesthetic and advanced custom visualizations.
 
-Currently, two official plugins are available:
+![Portfolio Preview](https://github.com/Gaurav-Sharma-007/PortfolioSite/assets/placeholder-image.png)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🚀 Key Features
 
-## React Compiler
+*   **Premium Aesthetic**: Dark-themed UI with **Glassmorphism** (frosted glass effects), rich gradients, and modern typography ('Outfit' & 'Inter').
+*   **Immersive Animations**:
+    *   **Custom Canvas Rocket**: A high-fidelity, sci-fi rocket animation in the footer with volumetric smoke and engine plasma.
+    *   **Interactive Backgrounds**: Floating rock instruments and particles using HTML5 Canvas.
+    *   **Scroll Reveal**: Elements fade and slide in smoothly as you scroll.
+*   **Dynamic Project Cards**:
+    *   **Auto-playing Video Previews**: Hover over project cards to see a video demonstration.
+    *   **Impact Graphs**: Custom bar charts visualizing the quantifiable impact of projects (e.g., accuracy improvements, speedups).
+    *   **Custom Visualizations**: Unique, code-generated animations for specific projects (e.g., a sinking Titanic, floating music notes, specific algorithms).
+*   **Responsive Design**: Fully optimized for mobile, tablet, and desktop devices.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🛠️ Tech Stack
 
-## Expanding the ESLint configuration
+*   **Frontend**: React.js, Vite
+*   **Styling**: Vanilla CSS3 (CSS Variables, Flexbox/Grid, Animations)
+*   **Graphics**: HTML5 Canvas API (for high-performance particles and animations)
+*   **Deployment**: Ready for Netlify, Vercel, or GitHub Pages
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 📦 Installation & Setup
+
+1.  **Clone the repository**:
+    ```bash
+    git clone https://github.com/Gaurav-Sharma-007/PortfolioSite.git
+    cd PortfolioSite
+    ```
+
+2.  **Install dependencies**:
+    ```bash
+    npm install
+    ```
+
+3.  **Run locally**:
+    ```bash
+    npm run dev
+    ```
+
+4.  **Build for production**:
+    ```bash
+    npm run build
+    ```
+
+## 📬 Contact
+
+*   **Email**: myspacegaurav7@gmail.com
+*   **GitHub**: [Gaurav-Sharma-007](https://github.com/Gaurav-Sharma-007)
+
+---
+*Values innovation, precision, and interactive storytelling.*
