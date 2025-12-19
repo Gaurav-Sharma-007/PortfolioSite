@@ -2,7 +2,6 @@
 
 A high-performance, interactive portfolio website built with **React** and **Vite**, featuring a premium "Space/Sci-Fi" aesthetic and advanced custom visualizations.
 
-![Portfolio Preview](https://github.com/Gaurav-Sharma-007/PortfolioSite/assets/placeholder-image.png)
 
 ## 🚀 Key Features
 
