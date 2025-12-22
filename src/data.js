@@ -79,14 +79,14 @@ export const portfolioData = {
     {
       id: 1,
       title: "Alzheimer’s Classification Model",
-      description: "Classified 6,400 MRI images into 4 groups with 98% accuracy using Deep Learning.",
+      description: "Classified 6,400 MRI images into 4 groups with 96% accuracy using Deep Learning.",
       tech: ["Deep Learning", "Python", "Computer Vision"],
       videoUrl: "", 
       posterUrl: "https://via.placeholder.com/600x400/101010/ffffff?text=Alzheimer+Model",
       liveUrl: "#",
-      repoUrl: "#",
+      repoUrl: "https://www.kaggle.com/code/jasmainekhale/alzheimer-s-disease-classification-inceptionv3",
       stats: [
-        { label: "Accuracy", value: 98, suffix: "%" }
+        { label: "Accuracy", value: 96, suffix: "%" }
       ]
     },
     {
@@ -122,7 +122,7 @@ export const portfolioData = {
       tech: ["Logistic Regression", "Python", "Data Science"],
       image: "https://via.placeholder.com/600x400?text=Titanic+Survival",
       liveUrl: "#",
-      repoUrl: "#",
+      repoUrl: "https://github.com/Gaurav-Sharma-007/Titanic",
       stats: [{ label: "Accuracy", value: 82, suffix: "%" }]
     },
     {
@@ -132,7 +132,7 @@ export const portfolioData = {
       tech: ["Linear Regression", "Data Science", "ML"],
       image: "https://via.placeholder.com/600x400?text=Movie+Price",
       liveUrl: "#",
-      repoUrl: "#",
+      repoUrl: "https://github.com/Gaurav-Sharma-007/MovieTicketsPricePrediction",
       stats: [{ label: "Error Rate", value: 15, suffix: "%", prefix: "-" }]
     },
     {
@@ -142,7 +142,7 @@ export const portfolioData = {
       tech: ["Deep Learning", "Audio Processing", "Python"],
       image: "https://via.placeholder.com/600x400?text=Music+Genre",
       liveUrl: "#",
-      repoUrl: "#",
+      repoUrl: "https://www.kaggle.com/code/shivammishra2611/music-genre-classification-dl",
       stats: [{ label: "Accuracy", value: 92, suffix: "%" }]
     },
     {
@@ -152,7 +152,7 @@ export const portfolioData = {
       tech: ["Machine Learning", "Healthcare AI", "Python"],
       image: "https://via.placeholder.com/600x400?text=Diabetes+Prediction",
       liveUrl: "#",
-      repoUrl: "#",
+      repoUrl: "https://github.com/Gaurav-Sharma-007/Microsoft-Future-Ready-Talent-Diabetes-Predictor",
       stats: [{ label: "Precision", value: 89, suffix: "%" }]
     },
     {
@@ -162,7 +162,7 @@ export const portfolioData = {
       tech: ["Generative AI", "Flask", "Python", "Gemini API"],
       image: "https://via.placeholder.com/600x400?text=MCQ+Generator",
       liveUrl: "#",
-      repoUrl: "#",
+      repoUrl: "https://github.com/Gaurav-Sharma-007/mcqgenerator",
       stats: [
         { label: "Options Gen.", value: 4, suffix: "", prefix: "" },
         { label: "Formats", value: 3, suffix: "", prefix: "" }
@@ -175,7 +175,7 @@ export const portfolioData = {
       tech: ["Regression", "Analytics", "Python"],
       image: "https://via.placeholder.com/600x400?text=YouTube+Ads",
       liveUrl: "#",
-      repoUrl: "#",
+      repoUrl: "https://github.com/Gaurav-Sharma-007/Youtube_Adview_Prediction",
       stats: [{ label: "Forecast Accuracy", value: 85, suffix: "%" }]
     }
   ],
