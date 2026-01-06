@@ -81,7 +81,7 @@ export const portfolioData = {
       title: "Alzheimer’s Classification Model",
       description: "Classified 6,400 MRI images into 4 groups with 96% accuracy using Deep Learning.",
       tech: ["Deep Learning", "Python", "Computer Vision"],
-      videoUrl: "", 
+      videoUrl: "",
       posterUrl: "https://via.placeholder.com/600x400/101010/ffffff?text=Alzheimer+Model",
       liveUrl: "#",
       repoUrl: "https://www.kaggle.com/code/jasmainekhale/alzheimer-s-disease-classification-inceptionv3",
@@ -97,7 +97,7 @@ export const portfolioData = {
       videoUrl: "",
       posterUrl: "https://via.placeholder.com/600x400/202020/ffffff?text=Churn+Prediction",
       liveUrl: "#",
-      repoUrl: "#",
+      repoUrl: "private",
       stats: [
         { label: "Accuracy", value: 87, suffix: "%" }
       ]
@@ -109,7 +109,7 @@ export const portfolioData = {
       tech: ["SharePoint", "JSON", "Power Apps", "Power BI"],
       image: "https://via.placeholder.com/600x400?text=SharePoint+Dashboard",
       liveUrl: "#",
-      repoUrl: "#",
+      repoUrl: "private",
       stats: [
         { label: "Real-time Data", value: 100, prefix: "", suffix: "%" },
         { label: "Customizability", value: 100, prefix: "", suffix: "%" }
@@ -177,6 +177,33 @@ export const portfolioData = {
       liveUrl: "#",
       repoUrl: "https://github.com/Gaurav-Sharma-007/Youtube_Adview_Prediction",
       stats: [{ label: "Forecast Accuracy", value: 85, suffix: "%" }]
+    },
+    {
+      id: 10,
+      title: "OCR Tool & File Compressor",
+      description: "Unified OCR and document compression solution for extracting text and optimizing storage without quality loss.",
+      tech: ["OCR", "Python", "Document Processing", "Compression"],
+      image: "https://via.placeholder.com/600x400?text=OCR+Compressor",
+      liveUrl: "#",
+      repoUrl: "https://github.com/Gaurav-Sharma-007/OCR-Tool-and-File-Compressor",
+      stats: [
+        { label: "Compression", value: 100, suffix: "%", prefix: "upto " },
+        { label: "Accuracy", value: 99, suffix: "%" }
+      ]
+    },
+    {
+      id: 11,
+      title: "BLANCDJ - Professional Web Audio Interface",
+      description: "Pro web DJ app with dual decks, vinyl physics, 3-band EQ, and real-time routing via Electron.",
+      tech: ["React", "TypeScript", "Web Audio API", "Electron"],
+      image: "https://via.placeholder.com/600x400?text=BLANCDJ+Interface",
+      liveUrl: "#",
+      repoUrl: "https://github.com/Gaurav-Sharma-007/Music-Mixer-App",
+      stats: [
+        { label: "Latency", value: 10, suffix: "ms", prefix: "<" },
+        { label: "Decks", value: 2, suffix: "", prefix: "" },
+        { label: "Effects", value: 5, suffix: "+", prefix: "" }
+      ]
     }
   ],
   certifications: [

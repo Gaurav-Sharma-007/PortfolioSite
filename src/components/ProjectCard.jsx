@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useScrollAnimation } from '../hooks/useScrollAnimation';
-import { AlzheimerViz, ChurnViz, SharePointViz, TitanicViz, MovieViz, MusicViz, DiabetesViz, YoutubeViz, McqViz } from './ProjectAnimations';
+import { AlzheimerViz, ChurnViz, SharePointViz, TitanicViz, MovieViz, MusicViz, DiabetesViz, YoutubeViz, McqViz, OcrViz, BlancDJViz } from './ProjectAnimations';
 
 import Counter from './Counter';
 
@@ -39,6 +39,8 @@ const ProjectCard = ({ project, index }) => {
     if (project.title.includes('Diabetes')) return <DiabetesViz />;
     if (project.title.includes('YouTube')) return <YoutubeViz />;
     if (project.title.includes('MCQ')) return <McqViz />;
+    if (project.title.includes('OCR')) return <OcrViz />;
+    if (project.title.includes('BLANCDJ')) return <BlancDJViz />;
     return null;
   };
 
@@ -100,7 +102,11 @@ const ProjectCard = ({ project, index }) => {
         )}
 
         <div className="links">
-          <a href={project.repoUrl} target="_blank" rel="noopener noreferrer">Code</a>
+          {project.repoUrl === 'private' ? (
+            <span className="client-project" title="Client project: Code not shared">* Client Project</span>
+          ) : (
+            <a href={project.repoUrl} target="_blank" rel="noopener noreferrer">Code</a>
+          )}
         </div>
       </div>
 
@@ -246,6 +252,13 @@ const ProjectCard = ({ project, index }) => {
         .links a {
           font-size: 0.9rem;
           font-weight: 500;
+        }
+
+        .client-project {
+          font-size: 0.9rem;
+          color: var(--text-secondary);
+          cursor: help;
+          font-style: italic;
         }
       `}</style>
     </div>
