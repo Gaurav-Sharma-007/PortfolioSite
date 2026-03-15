@@ -1,4 +1,4 @@
-# Gaurav Sharma - Premium Portfolio
+# Gaurav Sharma - Portfolio
 
 A high-performance, interactive portfolio website built with **React** and **Vite**, featuring a premium "Space/Sci-Fi" aesthetic and advanced custom visualizations.
 
@@ -22,29 +22,6 @@ A high-performance, interactive portfolio website built with **React** and **Vit
 *   **Styling**: Vanilla CSS3 (CSS Variables, Flexbox/Grid, Animations)
 *   **Graphics**: HTML5 Canvas API (for high-performance particles and animations)
 *   **Deployment**: Ready for Netlify, Vercel, or GitHub Pages
-
-## 📦 Installation & Setup
-
-1.  **Clone the repository**:
-    ```bash
-    git clone https://github.com/Gaurav-Sharma-007/PortfolioSite.git
-    cd PortfolioSite
-    ```
-
-2.  **Install dependencies**:
-    ```bash
-    npm install
-    ```
-
-3.  **Run locally**:
-    ```bash
-    npm run dev
-    ```
-
-4.  **Build for production**:
-    ```bash
-    npm run build
-    ```
 
 ## 📬 Contact
 
