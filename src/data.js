@@ -30,11 +30,27 @@ export const portfolioData = {
     }
   ],
   experience: [
-    {
+        {
       id: 1,
+      role: "Data AI Engineer",
+      company: "GammaEdge Technologies Pvt. Ltd.",
+      period: "Apr 2026 – Present",
+      description: "Building intelligent Data Engineering and AI solutions for enterprise clients.",
+      details: [
+        "Used Azure Data Factory to create scalable ETL pipelines, improving data processing efficiency by 40%.",
+        "Built RAG systems with LangChain + vector DBs for document intelligence.",
+        "Made significant contributions to the development of AI-powered data solutions."
+      ],
+      stats: [
+        { label: " Time saved due to automating with AI", value: 80, suffix: "%", prefix: "-" },
+        { label: "Data Processing Efficiency", value: 40, suffix: "%", prefix: "+" }
+      ]
+    },
+    {
+      id: 2,
       role: "Software Developer",
       company: "Gigatorb Software Pvt. Ltd.",
-      period: "Apr 2025 – Present",
+      period: "Apr 2025 – Apr 2026",
       description: "Building customizable SharePoint sites and end-to-end inventory management systems.",
       details: [
         "Built fully customizable SharePoint sites using native web-parts, JSON formatting, and Power Apps.",
@@ -49,7 +65,7 @@ export const portfolioData = {
       ]
     },
     {
-      id: 2,
+      id: 3,
       role: "Data Analytics Intern",
       company: "XXL Studioworks",
       period: "Jan – Jun 2024",
@@ -62,7 +78,7 @@ export const portfolioData = {
       ]
     },
     {
-      id: 3,
+      id: 4,
       role: "ML Intern",
       company: "Reliance Jio",
       period: "Jun – Aug 2023",
