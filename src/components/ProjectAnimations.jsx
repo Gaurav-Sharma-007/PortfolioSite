@@ -1572,3 +1572,587 @@ export const BlancDJViz = () => {
     return <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} />;
 };
 
+export const FinancierViz = () => {
+    const canvasRef = useRef(null);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let animationId;
+
+        const pulsePoints = [
+            { id: 'pdf', x: 0.15, y: 0.78, color: '#38bdf8', label: 'PDF' },
+            { id: 'embed', x: 0.35, y: 0.32, color: '#f59e0b', label: 'Bedrock' },
+            { id: 'vector', x: 0.56, y: 0.7, color: '#22d3ee', label: 'S3 Vec' },
+            { id: 'agent', x: 0.75, y: 0.35, color: '#34d399', label: 'Agent' },
+            { id: 'ui', x: 0.9, y: 0.68, color: '#60a5fa', label: 'Chat' }
+        ];
+
+        const links = [
+            ['pdf', 'embed'],
+            ['embed', 'vector'],
+            ['vector', 'agent'],
+            ['agent', 'ui']
+        ];
+
+        const particles = [];
+
+        const init = () => {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        };
+
+        const point = (id) => {
+            const p = pulsePoints.find((n) => n.id === id);
+            return { x: p.x * canvas.width, y: p.y * canvas.height, color: p.color, label: p.label };
+        };
+
+        init();
+        window.addEventListener('resize', init);
+
+        let tick = 0;
+        let linkIndex = 0;
+
+        const render = () => {
+            tick++;
+
+            const bg = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            bg.addColorStop(0, '#06121e');
+            bg.addColorStop(1, '#0f1b2d');
+            ctx.fillStyle = bg;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Top market chart
+            const chartY = canvas.height * 0.44;
+            ctx.strokeStyle = 'rgba(148, 163, 184, 0.22)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 4; i++) {
+                const y = chartY - 50 + i * 28;
+                ctx.beginPath();
+                ctx.moveTo(20, y);
+                ctx.lineTo(canvas.width - 20, y);
+                ctx.stroke();
+            }
+
+            ctx.beginPath();
+            ctx.lineWidth = 2.2;
+            ctx.strokeStyle = '#22d3ee';
+            for (let x = 24; x < canvas.width - 24; x += 6) {
+                const t = (x / 44) + tick * 0.05;
+                const y = chartY + Math.sin(t) * 16 + Math.cos(t * 0.7) * 8;
+                if (x === 24) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = '#22d3ee';
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            // Candles
+            for (let i = 0; i < 18; i++) {
+                const x = 28 + i * ((canvas.width - 56) / 18);
+                const wave = Math.sin((tick * 0.04) + i) * 14;
+                const open = chartY + wave;
+                const close = chartY + wave + Math.sin((tick * 0.06) + i * 1.4) * 12;
+                const high = Math.min(open, close) - (8 + Math.abs(Math.cos(i)) * 7);
+                const low = Math.max(open, close) + (8 + Math.abs(Math.sin(i)) * 7);
+                const up = close < open;
+                ctx.strokeStyle = up ? '#34d399' : '#f97316';
+                ctx.beginPath();
+                ctx.moveTo(x, high);
+                ctx.lineTo(x, low);
+                ctx.stroke();
+
+                ctx.fillStyle = up ? '#10b981' : '#ea580c';
+                ctx.fillRect(x - 3, Math.min(open, close), 6, Math.max(4, Math.abs(close - open)));
+            }
+
+            // Network links
+            links.forEach(([fromId, toId], idx) => {
+                const from = point(fromId);
+                const to = point(toId);
+                ctx.beginPath();
+                ctx.strokeStyle = `rgba(125, 211, 252, ${0.2 + (idx % 2) * 0.15})`;
+                ctx.lineWidth = 1.5;
+                ctx.moveTo(from.x, from.y);
+                ctx.lineTo(to.x, to.y);
+                ctx.stroke();
+            });
+
+            if (tick % 22 === 0) {
+                const edge = links[linkIndex];
+                const from = point(edge[0]);
+                const to = point(edge[1]);
+                particles.push({ from, to, t: 0, speed: 0.026 });
+                linkIndex = (linkIndex + 1) % links.length;
+            }
+
+            particles.forEach((p, i) => {
+                p.t += p.speed;
+                if (p.t >= 1.02) {
+                    particles.splice(i, 1);
+                    return;
+                }
+
+                const x = p.from.x + (p.to.x - p.from.x) * p.t;
+                const y = p.from.y + (p.to.y - p.from.y) * p.t;
+                ctx.fillStyle = '#e0f2fe';
+                ctx.shadowBlur = 12;
+                ctx.shadowColor = '#7dd3fc';
+                ctx.beginPath();
+                ctx.arc(x, y, 2.8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
+
+            // Nodes + labels
+            pulsePoints.forEach((p, idx) => {
+                const px = p.x * canvas.width;
+                const py = p.y * canvas.height;
+                const pulse = 0.5 + Math.sin(tick * 0.08 + idx) * 0.4;
+                ctx.fillStyle = p.color;
+                ctx.shadowBlur = 14;
+                ctx.shadowColor = p.color;
+                ctx.beginPath();
+                ctx.arc(px, py, 6 + pulse * 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                ctx.fillStyle = 'rgba(226, 232, 240, 0.9)';
+                ctx.font = '10px monospace';
+                ctx.fillText(p.label, px - 16, py - 12);
+            });
+
+            ctx.fillStyle = '#93c5fd';
+            ctx.font = 'bold 11px monospace';
+            ctx.fillText('NIFTY +1.8%  RELIANCE +0.9%  TCS -0.4%', 16, 16);
+
+            animationId = requestAnimationFrame(render);
+        };
+
+        render();
+        return () => {
+            window.removeEventListener('resize', init);
+            cancelAnimationFrame(animationId);
+        };
+    }, []);
+
+    return <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} />;
+};
+
+export const EyeTrackerViz = () => {
+    const canvasRef = useRef(null);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let animationId;
+        const clickRipples = [];
+
+        const directions = ['up', 'right', 'straight', 'down', 'left'];
+
+        const init = () => {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        };
+
+        init();
+        window.addEventListener('resize', init);
+
+        let tick = 0;
+        let modeIdx = 0;
+        let directionIdx = 0;
+
+        const render = () => {
+            tick++;
+            if (tick % 170 === 0) modeIdx = (modeIdx + 1) % 3;
+            if (tick % 62 === 0) {
+                directionIdx = (directionIdx + 1) % directions.length;
+                if (directions[directionIdx] === 'straight') {
+                    clickRipples.push({ r: 0, alpha: 0.8 });
+                }
+            }
+
+            const modeLabel = modeIdx === 0 ? 'CNN MODE' : modeIdx === 1 ? 'CV FALLBACK' : 'REKOGNITION';
+            const dir = directions[directionIdx];
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+
+            const bg = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            bg.addColorStop(0, '#070b14');
+            bg.addColorStop(1, '#0b1221');
+            ctx.fillStyle = bg;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Detection frame
+            const frameW = canvas.width * 0.62;
+            const frameH = canvas.height * 0.62;
+            const fx = cx - frameW / 2;
+            const fy = cy - frameH / 2;
+
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.45)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(fx, fy, frameW, frameH);
+
+            // Scan line
+            const scanY = fy + ((tick * 1.4) % frameH);
+            const g = ctx.createLinearGradient(0, scanY - 8, 0, scanY + 8);
+            g.addColorStop(0, 'rgba(56, 189, 248, 0)');
+            g.addColorStop(0.5, 'rgba(56, 189, 248, 0.45)');
+            g.addColorStop(1, 'rgba(56, 189, 248, 0)');
+            ctx.fillStyle = g;
+            ctx.fillRect(fx, scanY - 8, frameW, 16);
+
+            // Eyes
+            const eyeY = cy - 6;
+            const leftX = cx - 48;
+            const rightX = cx + 48;
+            const eyeW = 56;
+            const eyeH = 28;
+
+            const drawEye = (x) => {
+                ctx.fillStyle = '#111827';
+                ctx.strokeStyle = '#93c5fd';
+                ctx.lineWidth = 1.8;
+                ctx.beginPath();
+                ctx.ellipse(x, eyeY, eyeW / 2, eyeH / 2, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            };
+            drawEye(leftX);
+            drawEye(rightX);
+
+            const offset = { x: 0, y: 0 };
+            if (dir === 'up') offset.y = -6;
+            if (dir === 'down') offset.y = 6;
+            if (dir === 'left') offset.x = -8;
+            if (dir === 'right') offset.x = 8;
+
+            [leftX, rightX].forEach((x) => {
+                ctx.fillStyle = '#0ea5e9';
+                ctx.beginPath();
+                ctx.arc(x + offset.x, eyeY + offset.y, 7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#e2e8f0';
+                ctx.beginPath();
+                ctx.arc(x + offset.x + 2, eyeY + offset.y - 2, 2, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Cursor output
+            const cursorX = cx + offset.x * 4;
+            const cursorY = cy + 56 + offset.y * 3;
+            ctx.fillStyle = '#38bdf8';
+            ctx.beginPath();
+            ctx.moveTo(cursorX, cursorY);
+            ctx.lineTo(cursorX + 12, cursorY + 28);
+            ctx.lineTo(cursorX + 18, cursorY + 18);
+            ctx.lineTo(cursorX + 27, cursorY + 24);
+            ctx.lineTo(cursorX + 30, cursorY + 18);
+            ctx.lineTo(cursorX + 20, cursorY + 10);
+            ctx.lineTo(cursorX + 29, cursorY + 6);
+            ctx.closePath();
+            ctx.fill();
+
+            clickRipples.forEach((ripple, i) => {
+                ripple.r += 1.5;
+                ripple.alpha -= 0.016;
+                if (ripple.alpha <= 0) {
+                    clickRipples.splice(i, 1);
+                    return;
+                }
+                ctx.strokeStyle = `rgba(56, 189, 248, ${ripple.alpha})`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(cursorX + 12, cursorY + 14, ripple.r, 0, Math.PI * 2);
+                ctx.stroke();
+            });
+
+            ctx.font = 'bold 11px monospace';
+            ctx.fillStyle = '#7dd3fc';
+            ctx.fillText(modeLabel, 12, 18);
+            ctx.fillStyle = '#bae6fd';
+            ctx.fillText(`GAZE: ${dir.toUpperCase()}`, 12, 34);
+
+            animationId = requestAnimationFrame(render);
+        };
+
+        render();
+        return () => {
+            window.removeEventListener('resize', init);
+            cancelAnimationFrame(animationId);
+        };
+    }, []);
+
+    return <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} />;
+};
+
+export const ShoppingAgentViz = () => {
+    const canvasRef = useRef(null);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let animationId;
+        const pulses = [];
+
+        const nodes = [
+            { id: 'intent', x: 0.1, y: 0.28, label: 'Intent' },
+            { id: 'query', x: 0.24, y: 0.58, label: 'Query' },
+            { id: 'serp', x: 0.38, y: 0.3, label: 'SERP' },
+            { id: 'filter', x: 0.5, y: 0.58, label: 'Filter' },
+            { id: 'score', x: 0.64, y: 0.3, label: 'Rank' },
+            { id: 'cache', x: 0.78, y: 0.58, label: 'Dynamo' },
+            { id: 'reply', x: 0.9, y: 0.38, label: 'Reply' }
+        ];
+
+        const edges = [
+            ['intent', 'query'],
+            ['query', 'serp'],
+            ['serp', 'filter'],
+            ['filter', 'score'],
+            ['score', 'cache'],
+            ['cache', 'reply']
+        ];
+
+        const init = () => {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        };
+        init();
+        window.addEventListener('resize', init);
+
+        const locate = (id) => {
+            const n = nodes.find((item) => item.id === id);
+            return { ...n, px: n.x * canvas.width, py: n.y * canvas.height };
+        };
+
+        let tick = 0;
+        let edgeIndex = 0;
+
+        const render = () => {
+            tick++;
+            const bg = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            bg.addColorStop(0, '#0f172a');
+            bg.addColorStop(1, '#1e1b4b');
+            ctx.fillStyle = bg;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            edges.forEach(([fromId, toId]) => {
+                const from = locate(fromId);
+                const to = locate(toId);
+                ctx.beginPath();
+                ctx.strokeStyle = 'rgba(148, 163, 184, 0.45)';
+                ctx.lineWidth = 1.4;
+                ctx.moveTo(from.px, from.py);
+                ctx.lineTo(to.px, to.py);
+                ctx.stroke();
+            });
+
+            if (tick % 18 === 0) {
+                const [fromId, toId] = edges[edgeIndex];
+                const from = locate(fromId);
+                const to = locate(toId);
+                pulses.push({ from, to, t: 0, speed: 0.04 });
+                edgeIndex = (edgeIndex + 1) % edges.length;
+            }
+
+            pulses.forEach((pulse, i) => {
+                pulse.t += pulse.speed;
+                if (pulse.t > 1) {
+                    pulses.splice(i, 1);
+                    return;
+                }
+                const x = pulse.from.px + (pulse.to.px - pulse.from.px) * pulse.t;
+                const y = pulse.from.py + (pulse.to.py - pulse.from.py) * pulse.t;
+                ctx.fillStyle = '#f8fafc';
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#93c5fd';
+                ctx.beginPath();
+                ctx.arc(x, y, 3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
+
+            nodes.forEach((node, i) => {
+                const px = node.x * canvas.width;
+                const py = node.y * canvas.height;
+                const intensity = 0.5 + Math.sin(tick * 0.08 + i) * 0.35;
+                ctx.fillStyle = `rgba(56, 189, 248, ${0.25 + intensity * 0.5})`;
+                ctx.beginPath();
+                ctx.arc(px, py, 14, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#93c5fd';
+                ctx.lineWidth = 1.2;
+                ctx.stroke();
+                ctx.fillStyle = '#e2e8f0';
+                ctx.font = '10px monospace';
+                ctx.fillText(node.label, px - 17, py + 27);
+            });
+
+            // Ranked products panel
+            const panelX = canvas.width * 0.59;
+            const panelY = canvas.height * 0.08;
+            const productRows = [
+                { name: 'Echo Dot', score: 96, color: '#34d399' },
+                { name: 'Fire TV', score: 89, color: '#60a5fa' },
+                { name: 'Kindle', score: 84, color: '#fbbf24' }
+            ];
+
+            productRows.forEach((row, i) => {
+                const y = panelY + i * 34;
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+                ctx.fillRect(panelX, y, canvas.width * 0.33, 24);
+                ctx.fillStyle = row.color;
+                const w = (canvas.width * 0.21) * (row.score / 100);
+                ctx.fillRect(panelX + 100, y + 6, w, 10);
+                ctx.fillStyle = '#e2e8f0';
+                ctx.font = '10px monospace';
+                ctx.fillText(row.name, panelX + 6, y + 16);
+                ctx.fillText(`${row.score}`, panelX + 104 + w, y + 16);
+            });
+
+            ctx.fillStyle = '#c4b5fd';
+            ctx.font = 'bold 11px monospace';
+            ctx.fillText('7-NODE LANGGRAPH', 12, 16);
+
+            animationId = requestAnimationFrame(render);
+        };
+
+        render();
+        return () => {
+            window.removeEventListener('resize', init);
+            cancelAnimationFrame(animationId);
+        };
+    }, []);
+
+    return <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} />;
+};
+
+export const ResilientViz = () => {
+    const canvasRef = useRef(null);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let animationId;
+        const skillTokens = [];
+
+        const tokenWords = ['Python', 'NLP', 'Azure', 'SQL', 'API', 'ML'];
+
+        const init = () => {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+            skillTokens.length = 0;
+        };
+        init();
+        window.addEventListener('resize', init);
+
+        let tick = 0;
+        let scanY = 30;
+        let tokenIdx = 0;
+
+        const render = () => {
+            tick++;
+            const bg = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            bg.addColorStop(0, '#0b1320');
+            bg.addColorStop(1, '#1f2937');
+            ctx.fillStyle = bg;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const docX = canvas.width * 0.08;
+            const docY = canvas.height * 0.12;
+            const docW = canvas.width * 0.33;
+            const docH = canvas.height * 0.75;
+
+            // Resume paper
+            ctx.fillStyle = '#f8fafc';
+            ctx.fillRect(docX, docY, docW, docH);
+            ctx.fillStyle = '#cbd5e1';
+            for (let i = 0; i < 9; i++) {
+                const y = docY + 24 + i * 18;
+                ctx.fillRect(docX + 12, y, docW - 24 - (i % 3) * 22, 3);
+            }
+
+            scanY += 1.3;
+            if (scanY > docY + docH) scanY = docY;
+            const scanGrad = ctx.createLinearGradient(0, scanY - 10, 0, scanY + 10);
+            scanGrad.addColorStop(0, 'rgba(14, 165, 233, 0)');
+            scanGrad.addColorStop(0.5, 'rgba(14, 165, 233, 0.5)');
+            scanGrad.addColorStop(1, 'rgba(14, 165, 233, 0)');
+            ctx.fillStyle = scanGrad;
+            ctx.fillRect(docX, scanY - 10, docW, 20);
+
+            if (tick % 28 === 0) {
+                skillTokens.push({
+                    x: docX + docW + 8,
+                    y: scanY,
+                    tx: canvas.width * 0.62 + Math.random() * 42,
+                    ty: canvas.height * 0.24 + Math.random() * 84,
+                    label: tokenWords[tokenIdx % tokenWords.length],
+                    t: 0
+                });
+                tokenIdx++;
+            }
+
+            skillTokens.forEach((token, i) => {
+                token.t += 0.03;
+                if (token.t > 1) {
+                    skillTokens.splice(i, 1);
+                    return;
+                }
+                const x = token.x + (token.tx - token.x) * token.t;
+                const y = token.y + (token.ty - token.y) * token.t;
+                ctx.fillStyle = `rgba(125, 211, 252, ${1 - token.t * 0.2})`;
+                ctx.fillRect(x - 2, y - 8, token.label.length * 7 + 8, 16);
+                ctx.fillStyle = '#0f172a';
+                ctx.font = '10px monospace';
+                ctx.fillText(token.label, x + 2, y + 3);
+            });
+
+            // ATS ring
+            const ringX = canvas.width * 0.73;
+            const ringY = canvas.height * 0.35;
+            const score = 76 + Math.sin(tick * 0.05) * 8;
+            const progress = Math.max(0.1, Math.min(0.95, score / 100));
+
+            ctx.lineWidth = 10;
+            ctx.strokeStyle = 'rgba(148, 163, 184, 0.25)';
+            ctx.beginPath();
+            ctx.arc(ringX, ringY, 42, 0, Math.PI * 2);
+            ctx.stroke();
+
+            const ringGradient = ctx.createLinearGradient(ringX - 42, ringY, ringX + 42, ringY);
+            ringGradient.addColorStop(0, '#06b6d4');
+            ringGradient.addColorStop(1, '#22c55e');
+            ctx.strokeStyle = ringGradient;
+            ctx.beginPath();
+            ctx.arc(ringX, ringY, 42, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * progress));
+            ctx.stroke();
+
+            ctx.fillStyle = '#e2e8f0';
+            ctx.font = 'bold 14px monospace';
+            ctx.fillText(`${Math.round(score)} ATS`, ringX - 30, ringY + 5);
+
+            ctx.fillStyle = '#93c5fd';
+            ctx.font = '10px monospace';
+            ctx.fillText('Role Match: Data/AI Engineer', canvas.width * 0.52, canvas.height * 0.66);
+            ctx.fillStyle = '#a7f3d0';
+            ctx.fillText('Interview Qs Generated', canvas.width * 0.52, canvas.height * 0.74);
+
+            animationId = requestAnimationFrame(render);
+        };
+
+        render();
+        return () => {
+            window.removeEventListener('resize', init);
+            cancelAnimationFrame(animationId);
+        };
+    }, []);
+
+    return <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} />;
+};

@@ -220,6 +220,62 @@ export const portfolioData = {
         { label: "Decks", value: 2, suffix: "", prefix: "" },
         { label: "Effects", value: 5, suffix: "+", prefix: "" }
       ]
+    },
+    {
+      id: 12,
+      title: "Financier",
+      animationKey: "financier",
+      description: "Financial research assistant that combines LlamaIndex, Bedrock embeddings, S3 Vectors, and live Indian stock intelligence.",
+      tech: ["LlamaIndex", "AWS Bedrock", "S3 Vectors", "React", "Stock APIs"],
+      image: "https://via.placeholder.com/600x400?text=Financier",
+      liveUrl: "#",
+      repoUrl: "https://github.com/Gaurav-Sharma-007/Llama-Index-Stocks-Tool/tree/main",
+      stats: [
+        { label: "Sources", value: 4, suffix: "", prefix: "" },
+        { label: "Retriever", value: 1, suffix: "x", prefix: "custom " }
+      ]
+    },
+    {
+      id: 13,
+      title: "Eye Tracker - Gaze Controlled Scroll & Click",
+      animationKey: "eyeTracker",
+      description: "Webcam-based gaze controller with CNN inference, CV fallback, and optional Rekognition-enhanced eye localization.",
+      tech: ["Computer Vision", "TensorFlow", "OpenCV", "Amazon Rekognition"],
+      image: "https://via.placeholder.com/600x400?text=Eye+Tracker",
+      liveUrl: "#",
+      repoUrl: "https://github.com/Gaurav-Sharma-007/Eye-Tracker-CV/tree/main",
+      stats: [
+        { label: "Modes", value: 2, suffix: "", prefix: "" },
+        { label: "Directions", value: 5, suffix: "", prefix: "" }
+      ]
+    },
+    {
+      id: 14,
+      title: "Amazon Shopping Agent",
+      animationKey: "shoppingAgent",
+      description: "AI shopping recommender with a 7-node LangGraph pipeline, Amazon SERP filter links, ranking, and cached DynamoDB memory.",
+      tech: ["LangGraph", "React", "LLM Ranking", "DynamoDB", "Amazon SERP"],
+      image: "https://via.placeholder.com/600x400?text=Shopping+Agent",
+      liveUrl: "#",
+      repoUrl: "https://github.com/Gaurav-Sharma-007/Amazon-Shopping-Agent",
+      stats: [
+        { label: "Pipeline", value: 7, suffix: " nodes", prefix: "" },
+        { label: "Cache", value: 1, suffix: "x", prefix: "smart " }
+      ]
+    },
+    {
+      id: 15,
+      title: "Resilient - The LangChain Resume Analyser",
+      animationKey: "resilient",
+      description: "AI resume analyzer that parses PDFs, extracts skills, scores ATS readiness, maps roles, and generates interview questions.",
+      tech: ["FastAPI", "LangChain", "Azure OpenAI", "Next.js", "PDF Parsing"],
+      image: "https://via.placeholder.com/600x400?text=Resilient",
+      liveUrl: "#",
+      repoUrl: "https://github.com/Gaurav-Sharma-007/Resilient-The-Resume-Analyser",
+      stats: [
+        { label: "Outputs", value: 4, suffix: "", prefix: "" },
+        { label: "Stack", value: 2, suffix: " apps", prefix: "" }
+      ]
     }
   ],
   certifications: [

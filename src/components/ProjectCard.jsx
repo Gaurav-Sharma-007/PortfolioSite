@@ -1,14 +1,27 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { useScrollAnimation } from '../hooks/useScrollAnimation';
-import { AlzheimerViz, ChurnViz, SharePointViz, TitanicViz, MovieViz, MusicViz, DiabetesViz, YoutubeViz, McqViz, OcrViz, BlancDJViz } from './ProjectAnimations';
+import {
+  AlzheimerViz,
+  ChurnViz,
+  SharePointViz,
+  TitanicViz,
+  MovieViz,
+  MusicViz,
+  DiabetesViz,
+  YoutubeViz,
+  McqViz,
+  OcrViz,
+  BlancDJViz,
+  FinancierViz,
+  EyeTrackerViz,
+  ShoppingAgentViz,
+  ResilientViz
+} from './ProjectAnimations';
 
 import Counter from './Counter';
 
-const ProjectCard = ({ project, index }) => {
+const ProjectCard = ({ project }) => {
   const videoRef = useRef(null);
   const [isHovering, setIsHovering] = useState(false);
-  const [hasVideoError, setHasVideoError] = useState(false);
-  const [ref, isVisible] = useScrollAnimation();
 
   // Handle video hover play/pause
   useEffect(() => {
@@ -30,6 +43,10 @@ const ProjectCard = ({ project, index }) => {
 
   // Determine which visualization to show
   const renderViz = () => {
+    if (project.animationKey === 'financier') return <FinancierViz />;
+    if (project.animationKey === 'eyeTracker') return <EyeTrackerViz />;
+    if (project.animationKey === 'shoppingAgent') return <ShoppingAgentViz />;
+    if (project.animationKey === 'resilient') return <ResilientViz />;
     if (project.title.includes('Alzheimer')) return <AlzheimerViz />;
     if (project.title.includes('Churn')) return <ChurnViz />;
     if (project.title.includes('SharePoint')) return <SharePointViz />;
@@ -42,10 +59,6 @@ const ProjectCard = ({ project, index }) => {
     if (project.title.includes('OCR')) return <OcrViz />;
     if (project.title.includes('BLANCDJ')) return <BlancDJViz />;
     return null;
-  };
-
-  const handleVideoError = () => {
-    setHasVideoError(true);
   };
 
   return (
@@ -67,7 +80,6 @@ const ProjectCard = ({ project, index }) => {
               loop
               muted
               playsInline
-              onError={handleVideoError}
               className={`project-video ${isHovering ? 'is-playing' : ''}`}
             />
           </>
