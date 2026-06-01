@@ -1912,173 +1912,402 @@ export const BlancDJViz = () => {
 };
 
 export const FinancierViz = () => {
-    const canvasRef = useRef(null);
+  const canvasRef = useRef(null);
 
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        let animationId;
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
 
-        const pulsePoints = [
-            { id: 'pdf', x: 0.15, y: 0.78, color: '#38bdf8', label: 'PDF' },
-            { id: 'embed', x: 0.35, y: 0.32, color: '#f59e0b', label: 'Bedrock' },
-            { id: 'vector', x: 0.56, y: 0.7, color: '#22d3ee', label: 'S3 Vec' },
-            { id: 'agent', x: 0.75, y: 0.35, color: '#34d399', label: 'Agent' },
-            { id: 'ui', x: 0.9, y: 0.68, color: '#60a5fa', label: 'Chat' }
-        ];
+    let animationId;
+    let tick = 0;
 
-        const links = [
-            ['pdf', 'embed'],
-            ['embed', 'vector'],
-            ['vector', 'agent'],
-            ['agent', 'ui']
-        ];
+    const packets = [];
+    const fog = [];
 
-        const particles = [];
+    const nodes = [
+      {
+        id: "pdf",
+        x: 0.12,
+        y: 0.78,
+        title: "PDF Loader",
+        subtitle: "145 Documents",
+        color: "#38bdf8",
+      },
+      {
+        id: "embed",
+        x: 0.35,
+        y: 0.3,
+        title: "Bedrock",
+        subtitle: "Titan Embeddings",
+        color: "#f59e0b",
+      },
+      {
+        id: "vector",
+        x: 0.56,
+        y: 0.72,
+        title: "S3 Vectors",
+        subtitle: "2.3M vectors",
+        color: "#22d3ee",
+      },
+      {
+        id: "agent",
+        x: 0.75,
+        y: 0.34,
+        title: "AI Agent",
+        subtitle: "Reasoning",
+        color: "#34d399",
+      },
+      {
+        id: "chat",
+        x: 0.9,
+        y: 0.72,
+        title: "Chat UI",
+        subtitle: "Answer",
+        color: "#60a5fa",
+      },
+    ];
 
-        const init = () => {
-            canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = canvas.parentElement.clientHeight;
-        };
+    const links = [
+      ["pdf", "embed"],
+      ["embed", "vector"],
+      ["vector", "agent"],
+      ["agent", "chat"],
+    ];
 
-        const point = (id) => {
-            const p = pulsePoints.find((n) => n.id === id);
-            return { x: p.x * canvas.width, y: p.y * canvas.height, color: p.color, label: p.label };
-        };
+    const resize = () => {
+      canvas.width = canvas.parentElement.clientWidth;
+      canvas.height = canvas.parentElement.clientHeight;
+    };
 
-        init();
-        window.addEventListener('resize', init);
+    resize();
+    window.addEventListener("resize", resize);
 
-        let tick = 0;
-        let linkIndex = 0;
+    for (let i = 0; i < 100; i++) {
+      fog.push({
+        x: Math.random() * 2000,
+        y: Math.random() * 1000,
+        r: Math.random() * 2,
+        vx: (Math.random() - 0.5) * 0.15,
+        vy: (Math.random() - 0.5) * 0.15,
+      });
+    }
 
-        const render = () => {
-            tick++;
+    const chartData = [];
+    let price = 100;
 
-            const bg = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-            bg.addColorStop(0, '#06121e');
-            bg.addColorStop(1, '#0f1b2d');
-            ctx.fillStyle = bg;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < 500; i++) {
+      price += (Math.random() - 0.48) * 2;
 
-            // Top market chart
-            const chartY = canvas.height * 0.44;
-            ctx.strokeStyle = 'rgba(148, 163, 184, 0.22)';
-            ctx.lineWidth = 1;
-            for (let i = 0; i < 4; i++) {
-                const y = chartY - 50 + i * 28;
-                ctx.beginPath();
-                ctx.moveTo(20, y);
-                ctx.lineTo(canvas.width - 20, y);
-                ctx.stroke();
-            }
+      if (Math.random() > 0.985) {
+        price += (Math.random() - 0.5) * 15;
+      }
 
-            ctx.beginPath();
-            ctx.lineWidth = 2.2;
-            ctx.strokeStyle = '#22d3ee';
-            for (let x = 24; x < canvas.width - 24; x += 6) {
-                const t = (x / 44) + tick * 0.05;
-                const y = chartY + Math.sin(t) * 16 + Math.cos(t * 0.7) * 8;
-                if (x === 24) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
-            }
-            ctx.shadowBlur = 12;
-            ctx.shadowColor = '#22d3ee';
-            ctx.stroke();
-            ctx.shadowBlur = 0;
+      chartData.push(price);
+    }
 
-            // Candles
-            for (let i = 0; i < 18; i++) {
-                const x = 28 + i * ((canvas.width - 56) / 18);
-                const wave = Math.sin((tick * 0.04) + i) * 14;
-                const open = chartY + wave;
-                const close = chartY + wave + Math.sin((tick * 0.06) + i * 1.4) * 12;
-                const high = Math.min(open, close) - (8 + Math.abs(Math.cos(i)) * 7);
-                const low = Math.max(open, close) + (8 + Math.abs(Math.sin(i)) * 7);
-                const up = close < open;
-                ctx.strokeStyle = up ? '#34d399' : '#f97316';
-                ctx.beginPath();
-                ctx.moveTo(x, high);
-                ctx.lineTo(x, low);
-                ctx.stroke();
+    const getNode = (id) => {
+      const n = nodes.find((n) => n.id === id);
 
-                ctx.fillStyle = up ? '#10b981' : '#ea580c';
-                ctx.fillRect(x - 3, Math.min(open, close), 6, Math.max(4, Math.abs(close - open)));
-            }
+      return {
+        ...n,
+        px: n.x * canvas.width,
+        py: n.y * canvas.height,
+      };
+    };
 
-            // Network links
-            links.forEach(([fromId, toId], idx) => {
-                const from = point(fromId);
-                const to = point(toId);
-                ctx.beginPath();
-                ctx.strokeStyle = `rgba(125, 211, 252, ${0.2 + (idx % 2) * 0.15})`;
-                ctx.lineWidth = 1.5;
-                ctx.moveTo(from.x, from.y);
-                ctx.lineTo(to.x, to.y);
-                ctx.stroke();
-            });
+    let activeLink = 0;
 
-            if (tick % 22 === 0) {
-                const edge = links[linkIndex];
-                const from = point(edge[0]);
-                const to = point(edge[1]);
-                particles.push({ from, to, t: 0, speed: 0.026 });
-                linkIndex = (linkIndex + 1) % links.length;
-            }
+    const spawnPacket = () => {
+      const [from, to] = links[activeLink];
 
-            particles.forEach((p, i) => {
-                p.t += p.speed;
-                if (p.t >= 1.02) {
-                    particles.splice(i, 1);
-                    return;
-                }
+      packets.push({
+        from: getNode(from),
+        to: getNode(to),
+        progress: 0,
+      });
 
-                const x = p.from.x + (p.to.x - p.from.x) * p.t;
-                const y = p.from.y + (p.to.y - p.from.y) * p.t;
-                ctx.fillStyle = '#e0f2fe';
-                ctx.shadowBlur = 12;
-                ctx.shadowColor = '#7dd3fc';
-                ctx.beginPath();
-                ctx.arc(x, y, 2.8, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.shadowBlur = 0;
-            });
+      activeLink = (activeLink + 1) % links.length;
+    };
 
-            // Nodes + labels
-            pulsePoints.forEach((p, idx) => {
-                const px = p.x * canvas.width;
-                const py = p.y * canvas.height;
-                const pulse = 0.5 + Math.sin(tick * 0.08 + idx) * 0.4;
-                ctx.fillStyle = p.color;
-                ctx.shadowBlur = 14;
-                ctx.shadowColor = p.color;
-                ctx.beginPath();
-                ctx.arc(px, py, 6 + pulse * 2, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.shadowBlur = 0;
+    setInterval(spawnPacket, 400);
 
-                ctx.fillStyle = 'rgba(226, 232, 240, 0.9)';
-                ctx.font = '10px monospace';
-                ctx.fillText(p.label, px - 16, py - 12);
-            });
+    const drawGrid = () => {
+      ctx.strokeStyle = "rgba(255,255,255,0.03)";
+      ctx.lineWidth = 1;
 
-            ctx.fillStyle = '#93c5fd';
-            ctx.font = 'bold 11px monospace';
-            ctx.fillText('NIFTY +1.8%  RELIANCE +0.9%  TCS -0.4%', 16, 16);
+      for (let x = 0; x < canvas.width; x += 40) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
 
-            animationId = requestAnimationFrame(render);
-        };
+      for (let y = 0; y < canvas.height; y += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+    };
 
-        render();
-        return () => {
-            window.removeEventListener('resize', init);
-            cancelAnimationFrame(animationId);
-        };
-    }, []);
+    const drawChart = () => {
+      const topHeight = canvas.height * 0.42;
 
-    return <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} />;
-};
+      ctx.save();
+
+      ctx.beginPath();
+
+      chartData.forEach((p, i) => {
+        const x = (i / chartData.length) * canvas.width;
+
+        const y =
+          topHeight -
+          ((p - 70) / 60) * topHeight +
+          Math.sin(tick * 0.01) * 2;
+
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+
+      ctx.strokeStyle = "#22d3ee";
+      ctx.lineWidth = 2;
+
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = "#22d3ee";
+
+      ctx.stroke();
+
+      ctx.restore();
+    };
+
+    const drawCards = () => {
+      nodes.forEach((node, index) => {
+        const x = node.x * canvas.width;
+        const y = node.y * canvas.height;
+
+        const w = 130;
+        const h = 55;
+
+        const pulse =
+          Math.sin(tick * 0.05 + index) * 0.5 + 0.5;
+
+        ctx.save();
+
+        ctx.fillStyle = "rgba(15,23,42,0.75)";
+        ctx.strokeStyle = "rgba(255,255,255,0.08)";
+        ctx.lineWidth = 1;
+
+        roundRect(ctx, x - w / 2, y - h / 2, w, h, 12);
+
+        ctx.fill();
+        ctx.stroke();
+
+        for (let r = 0; r < 3; r++) {
+          const radius =
+            10 + ((tick + r * 30) % 90);
+
+          ctx.strokeStyle =
+            `rgba(52,211,153,${
+              1 - radius / 100
+            })`;
+
+          ctx.beginPath();
+          ctx.arc(x, y, radius, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        ctx.fillStyle = "white";
+        ctx.font = "bold 12px Inter";
+        ctx.fillText(node.title, x - 50, y - 3);
+
+        ctx.fillStyle = "#94a3b8";
+        ctx.font = "10px Inter";
+        ctx.fillText(node.subtitle, x - 50, y + 14);
+
+        ctx.beginPath();
+        ctx.fillStyle = node.color;
+        ctx.arc(x + 48, y, 6 + pulse * 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      });
+    };
+
+    const drawLinks = () => {
+      links.forEach(([a, b]) => {
+        const n1 = getNode(a);
+        const n2 = getNode(b);
+
+        const grad =
+          ctx.createLinearGradient(
+            n1.px,
+            n1.py,
+            n2.px,
+            n2.py
+          );
+
+        grad.addColorStop(0, "#0ea5e9");
+        grad.addColorStop(1, "#34d399");
+
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 2;
+
+        ctx.beginPath();
+        ctx.moveTo(n1.px, n1.py);
+        ctx.lineTo(n2.px, n2.py);
+        ctx.stroke();
+      });
+    };
+
+    const drawPackets = () => {
+      packets.forEach((p) => {
+        p.progress += 0.02;
+
+        const x =
+          p.from.px +
+          (p.to.px - p.from.px) *
+            p.progress;
+
+        const y =
+          p.from.py +
+          (p.to.py - p.from.py) *
+            p.progress;
+
+        ctx.fillStyle = "#e0f2fe";
+
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = "#38bdf8";
+
+        ctx.fillRect(
+          x - 5,
+          y - 2,
+          10,
+          4
+        );
+      });
+
+      while (
+        packets.length &&
+        packets[0].progress > 1
+      ) {
+        packets.shift();
+      }
+    };
+
+    const drawFog = () => {
+      fog.forEach((f) => {
+        f.x += f.vx;
+        f.y += f.vy;
+
+        ctx.fillStyle =
+          "rgba(255,255,255,0.04)";
+
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    };
+
+    const drawTicker = () => {
+      const ticker =
+        "NIFTY 24852 ▲1.84%    BANKNIFTY 55321 ▲0.72%    RELIANCE 3184 ▲0.91%    INFY 1612 ▼0.28%";
+
+      const offset =
+        -(tick * 2) %
+        (ctx.measureText(ticker).width + 100);
+
+      ctx.fillStyle = "#93c5fd";
+      ctx.font = "bold 12px monospace";
+
+      ctx.fillText(
+        ticker,
+        offset,
+        25
+      );
+
+      ctx.fillText(
+        ticker,
+        offset +
+          ctx.measureText(ticker).width +
+          100,
+        25
+      );
+    };
+
+    const animate = () => {
+      tick++;
+
+      const bg =
+        ctx.createLinearGradient(
+          0,
+          0,
+          0,
+          canvas.height
+        );
+
+      bg.addColorStop(0, "#050b14");
+      bg.addColorStop(1, "#0f172a");
+
+      ctx.fillStyle = bg;
+      ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
+
+      drawGrid();
+      drawFog();
+      drawChart();
+      drawLinks();
+      drawPackets();
+      drawCards();
+      drawTicker();
+
+      animationId =
+        requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    return () => {
+      cancelAnimationFrame(animationId);
+      window.removeEventListener(
+        "resize",
+        resize
+      );
+    };
+  }, []);
+
+  function roundRect(
+    ctx,
+    x,
+    y,
+    w,
+    h,
+    r
+  ) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+
+    ctx.closePath();
+  }
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{
+        width: "100%",
+        height: "100%",
+      }}
+    />
+  );
+}
 
 export const EyeTrackerViz = () => {
     const canvasRef = useRef(null);
