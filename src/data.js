@@ -276,6 +276,20 @@ export const portfolioData = {
         { label: "Outputs", value: 4, suffix: "", prefix: "" },
         { label: "Stack", value: 2, suffix: " apps", prefix: "" }
       ]
+    },
+    {
+      id: 16,
+      title: "Recipe Mixer and Dietician App",
+      animationKey: "recipeMixer",
+      description: "Pantry-to-plate AI app that matches recipes from your ingredients, suggests missing items, and surfaces nutrition insights.",
+      tech: ["PostgreSQL", "MealDB API", "Groq AI", "Open Food Facts API", "React"],
+      image: "https://via.placeholder.com/600x400?text=Recipe+Mixer",
+      liveUrl: "#",
+      repoUrl: "private",
+      stats: [
+        { label: "Data APIs", value: 2, suffix: "", prefix: "" },
+        { label: "AI Assist", value: 1, suffix: "x", prefix: "" }
+      ]
     }
   ],
   certifications: [

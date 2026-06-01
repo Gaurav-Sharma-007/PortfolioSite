@@ -1897,26 +1897,29 @@ export const ShoppingAgentViz = () => {
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         let animationId;
-        const pulses = [];
+        let startTime = performance.now();
 
-        const nodes = [
-            { id: 'intent', x: 0.1, y: 0.28, label: 'Intent' },
-            { id: 'query', x: 0.24, y: 0.58, label: 'Query' },
-            { id: 'serp', x: 0.38, y: 0.3, label: 'SERP' },
-            { id: 'filter', x: 0.5, y: 0.58, label: 'Filter' },
-            { id: 'score', x: 0.64, y: 0.3, label: 'Rank' },
-            { id: 'cache', x: 0.78, y: 0.58, label: 'Dynamo' },
-            { id: 'reply', x: 0.9, y: 0.38, label: 'Reply' }
+        const query = 'wireless earbuds under ₹2000';
+        const products = [
+            { name: 'boAt Airdopes 141', price: 1299, rating: '4.1', score: 94, reason: 'Best value + Prime' },
+            { name: 'Noise Buds VS104', price: 1499, rating: '4.0', score: 89, reason: 'Strong battery score' },
+            { name: 'Generic Bass Pods', price: 1899, rating: '3.4', score: 61, reason: 'Lower rating, weak reviews' }
         ];
 
-        const edges = [
-            ['intent', 'query'],
-            ['query', 'serp'],
-            ['serp', 'filter'],
-            ['filter', 'score'],
-            ['score', 'cache'],
-            ['cache', 'reply']
-        ];
+        const clamp = (value, min = 0, max = 1) => Math.max(min, Math.min(max, value));
+        const easeOut = (value) => 1 - Math.pow(1 - clamp(value), 3);
+        const fade = (time, start, duration) => clamp((time - start) / duration);
+        const formatPrice = (price) => `Rs ${price}`;
+        const roundRect = (x, y, w, h, r) => {
+            ctx.beginPath();
+            ctx.roundRect(x, y, w, h, r);
+        };
+
+        const drawText = (text, x, y, color = '#111827', size = 10, weight = '500') => {
+            ctx.fillStyle = color;
+            ctx.font = `${weight} ${size}px Arial, sans-serif`;
+            ctx.fillText(text, x, y);
+        };
 
         const init = () => {
             canvas.width = canvas.parentElement.clientWidth;
@@ -1925,99 +1928,139 @@ export const ShoppingAgentViz = () => {
         init();
         window.addEventListener('resize', init);
 
-        const locate = (id) => {
-            const n = nodes.find((item) => item.id === id);
-            return { ...n, px: n.x * canvas.width, py: n.y * canvas.height };
-        };
-
-        let tick = 0;
-        let edgeIndex = 0;
-
         const render = () => {
-            tick++;
-            const bg = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-            bg.addColorStop(0, '#0f172a');
-            bg.addColorStop(1, '#1e1b4b');
-            ctx.fillStyle = bg;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            const loopDuration = 9200;
+            const t = (performance.now() - startTime) % loopDuration;
+            const width = canvas.width;
+            const height = canvas.height;
+            const pad = 10;
 
-            edges.forEach(([fromId, toId]) => {
-                const from = locate(fromId);
-                const to = locate(toId);
-                ctx.beginPath();
-                ctx.strokeStyle = 'rgba(148, 163, 184, 0.45)';
-                ctx.lineWidth = 1.4;
-                ctx.moveTo(from.px, from.py);
-                ctx.lineTo(to.px, to.py);
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = '#f3f3f3';
+            ctx.fillRect(0, 0, width, height);
+
+            // Amazon-style nav and self-typing search.
+            ctx.fillStyle = '#232f3e';
+            ctx.fillRect(0, 0, width, 32);
+            drawText('amazon.ai', 11, 20, '#ffffff', 12, '700');
+
+            const searchX = Math.min(88, width * 0.24);
+            const searchW = width - searchX - 48;
+            roundRect(searchX, 7, searchW, 18, 4);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+            const typedChars = Math.floor(easeOut(t / 1500) * query.length);
+            drawText(query.slice(0, typedChars), searchX + 8, 20, '#111827', 9, '500');
+            ctx.fillStyle = '#ff9900';
+            ctx.fillRect(searchX + searchW - 24, 7, 24, 18);
+            drawText('Go', searchX + searchW - 19, 20, '#111827', 8, '700');
+
+            const statusMessages = [
+                'typing user query...',
+                'scanning results...',
+                'ranking by price, rating, Prime eligibility.',
+                'adding best picks to cart...'
+            ];
+            const statusIndex = t < 1600 ? 0 : t < 3000 ? 1 : t < 5600 ? 2 : 3;
+            roundRect(pad, 38, width - pad * 2, 20, 5);
+            ctx.fillStyle = '#fff7d6';
+            ctx.fill();
+            drawText(`AI agent: ${statusMessages[statusIndex]}`, pad + 9, 52, '#232f3e', 9, '700');
+
+            const cardGap = 7;
+            const cardY = 66;
+            const cartProgress = easeOut((t - 6000) / 700);
+            const cardH = cartProgress > 0 ? 74 : 88;
+            const cardW = (width - pad * 2 - cardGap * 2) / 3;
+            const revealCount = t > 1900 ? Math.min(3, Math.floor((t - 1900) / 380) + 1) : 0;
+            const activeIndex = t < 3100 ? -1 : t < 3900 ? 0 : t < 4700 ? 1 : t < 5500 ? 2 : -1;
+            const finalState = t >= 5600;
+
+            products.forEach((product, index) => {
+                const reveal = easeOut((t - (1800 + index * 320)) / 450);
+                if (reveal <= 0) return;
+
+                const x = pad + index * (cardW + cardGap);
+                const y = cardY + (1 - reveal) * 18;
+                const isPick = finalState && index < 2;
+                const isSkipped = finalState && index === 2;
+                const alpha = isSkipped ? 0.5 : 1;
+
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                roundRect(x, y, cardW, cardH, 6);
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+                ctx.lineWidth = activeIndex === index ? 3 : isPick ? 2.5 : 1;
+                ctx.strokeStyle = activeIndex === index ? '#ff9900' : isPick ? '#16a34a' : '#d5d9d9';
                 ctx.stroke();
+
+                roundRect(x + 8, y + 8, cardW - 16, 20, 4);
+                ctx.fillStyle = index === 0 ? '#e0f2fe' : index === 1 ? '#fef3c7' : '#e5e7eb';
+                ctx.fill();
+                drawText('earbuds', x + 14, y + 22, '#232f3e', 8, '700');
+
+                drawText(product.name, x + 7, y + 41, '#111827', 8, '700');
+                drawText(`${formatPrice(product.price)} | ${product.rating} star`, x + 7, y + 56, '#374151', 8, '600');
+                drawText(`score ${product.score}`, x + 7, y + 70, isPick ? '#16a34a' : '#92400e', 8, '700');
+
+                if (isPick) {
+                    roundRect(x + cardW - 45, y + 6, 37, 14, 7);
+                    ctx.fillStyle = '#dcfce7';
+                    ctx.fill();
+                    drawText('AI pick', x + cardW - 41, y + 16, '#166534', 7, '700');
+                }
+
+                if (isSkipped) {
+                    roundRect(x + cardW - 45, y + 6, 37, 14, 7);
+                    ctx.fillStyle = '#fee2e2';
+                    ctx.fill();
+                    drawText('skipped', x + cardW - 42, y + 16, '#991b1b', 7, '700');
+                }
+                ctx.restore();
             });
 
-            if (tick % 18 === 0) {
-                const [fromId, toId] = edges[edgeIndex];
-                const from = locate(fromId);
-                const to = locate(toId);
-                pulses.push({ from, to, t: 0, speed: 0.04 });
-                edgeIndex = (edgeIndex + 1) % edges.length;
+            // Reasoning log.
+            const logY = 160;
+            roundRect(pad, logY, width - pad * 2, 18, 5);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+            let logText = 'Waiting for product results...';
+            if (activeIndex >= 0) {
+                const product = products[activeIndex];
+                logText = `score ${product.score}: ${product.reason}`;
+            } else if (finalState) {
+                logText = 'Top 2 selected. Weakest result skipped.';
+            } else if (revealCount > 0) {
+                logText = 'Results loaded. Reading each card...';
+            }
+            drawText(logText, pad + 8, logY + 12, '#232f3e', 8, '700');
+
+            // Sliding cart panel and checkout.
+            if (cartProgress > 0) {
+                const cartY = height - 49 + (1 - cartProgress) * 48;
+                roundRect(pad, cartY, width - pad * 2, 42, 7);
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+                ctx.strokeStyle = '#ff9900';
+                ctx.stroke();
+                drawText('Cart', pad + 8, cartY + 14, '#232f3e', 10, '800');
+                drawText(`boAt - ${formatPrice(products[0].price)}`, pad + 8, cartY + 27, '#374151', 8, '600');
+                drawText(`Noise - ${formatPrice(products[1].price)}`, width * 0.45, cartY + 27, '#374151', 8, '600');
+                drawText(`Total ${formatPrice(products[0].price + products[1].price)}`, width - 88, cartY + 14, '#111827', 9, '800');
             }
 
-            pulses.forEach((pulse, i) => {
-                pulse.t += pulse.speed;
-                if (pulse.t > 1) {
-                    pulses.splice(i, 1);
-                    return;
-                }
-                const x = pulse.from.px + (pulse.to.px - pulse.from.px) * pulse.t;
-                const y = pulse.from.py + (pulse.to.py - pulse.from.py) * pulse.t;
-                ctx.fillStyle = '#f8fafc';
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = '#93c5fd';
-                ctx.beginPath();
-                ctx.arc(x, y, 3, 0, Math.PI * 2);
+            const checkoutProgress = fade(t, 7350, 500);
+            if (checkoutProgress > 0) {
+                ctx.globalAlpha = checkoutProgress;
+                roundRect(width - 132, height - 27, 116, 19, 9);
+                ctx.fillStyle = '#ffd814';
                 ctx.fill();
-                ctx.shadowBlur = 0;
-            });
-
-            nodes.forEach((node, i) => {
-                const px = node.x * canvas.width;
-                const py = node.y * canvas.height;
-                const intensity = 0.5 + Math.sin(tick * 0.08 + i) * 0.35;
-                ctx.fillStyle = `rgba(56, 189, 248, ${0.25 + intensity * 0.5})`;
-                ctx.beginPath();
-                ctx.arc(px, py, 14, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.strokeStyle = '#93c5fd';
-                ctx.lineWidth = 1.2;
+                ctx.strokeStyle = '#fcd200';
                 ctx.stroke();
-                ctx.fillStyle = '#e2e8f0';
-                ctx.font = '10px monospace';
-                ctx.fillText(node.label, px - 17, py + 27);
-            });
-
-            // Ranked products panel
-            const panelX = canvas.width * 0.59;
-            const panelY = canvas.height * 0.08;
-            const productRows = [
-                { name: 'Echo Dot', score: 96, color: '#34d399' },
-                { name: 'Fire TV', score: 89, color: '#60a5fa' },
-                { name: 'Kindle', score: 84, color: '#fbbf24' }
-            ];
-
-            productRows.forEach((row, i) => {
-                const y = panelY + i * 34;
-                ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
-                ctx.fillRect(panelX, y, canvas.width * 0.33, 24);
-                ctx.fillStyle = row.color;
-                const w = (canvas.width * 0.21) * (row.score / 100);
-                ctx.fillRect(panelX + 100, y + 6, w, 10);
-                ctx.fillStyle = '#e2e8f0';
-                ctx.font = '10px monospace';
-                ctx.fillText(row.name, panelX + 6, y + 16);
-                ctx.fillText(`${row.score}`, panelX + 104 + w, y + 16);
-            });
-
-            ctx.fillStyle = '#c4b5fd';
-            ctx.font = 'bold 11px monospace';
-            ctx.fillText('7-NODE LANGGRAPH', 12, 16);
+                drawText('Proceed to checkout', width - 124, height - 14, '#111827', 8, '800');
+                ctx.globalAlpha = 1;
+            }
 
             animationId = requestAnimationFrame(render);
         };
@@ -2148,6 +2191,220 @@ export const ResilientViz = () => {
         };
 
         render();
+        return () => {
+            window.removeEventListener('resize', init);
+            cancelAnimationFrame(animationId);
+        };
+    }, []);
+
+    return <canvas ref={canvasRef} style={{ width: '100%', height: '100%' }} />;
+};
+
+export const RecipeMixerViz = () => {
+    const canvasRef = useRef(null);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let animationId;
+        let startTime = performance.now();
+
+        const pantryItems = [
+            { label: 'tomato', color: '#fee2e2', text: '#991b1b' },
+            { label: 'onion', color: '#f3e8ff', text: '#6b21a8' },
+            { label: 'garlic', color: '#fef3c7', text: '#92400e' },
+            { label: 'chicken', color: '#ffedd5', text: '#9a3412' },
+            { label: 'rice', color: '#dcfce7', text: '#166534' }
+        ];
+
+        const recipeCards = [
+            { name: 'Chicken Bowl', match: 92, icon: '#f97316' },
+            { name: 'Tomato Soup', match: 84, icon: '#ef4444' },
+            { name: 'Fried Rice', match: 78, icon: '#22c55e' }
+        ];
+
+        const missingItems = ['olive oil', 'paprika', 'lemon'];
+        const nutritionBars = [
+            { label: 'Protein', value: 74, color: '#16a34a' },
+            { label: 'Carbs', value: 62, color: '#65a30d' },
+            { label: 'Fat', value: 36, color: '#f97316' },
+            { label: 'Calories', value: 82, color: '#0f766e' }
+        ];
+
+        const clamp = (value, min = 0, max = 1) => Math.max(min, Math.min(max, value));
+        const easeOut = (value) => 1 - Math.pow(1 - clamp(value), 3);
+        const fade = (time, start, duration) => clamp((time - start) / duration);
+        const roundRect = (x, y, w, h, r) => {
+            ctx.beginPath();
+            ctx.roundRect(x, y, w, h, r);
+        };
+        const drawText = (text, x, y, color = '#14532d', size = 10, weight = '600') => {
+            ctx.fillStyle = color;
+            ctx.font = `${weight} ${size}px Arial, sans-serif`;
+            ctx.fillText(text, x, y);
+        };
+        const drawBagIcon = (x, y, color = '#991b1b') => {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x, y + 3, 7, 7);
+            ctx.beginPath();
+            ctx.arc(x + 3.5, y + 3, 2.4, Math.PI, 0);
+            ctx.stroke();
+        };
+
+        const init = () => {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        };
+
+        init();
+        window.addEventListener('resize', init);
+
+        const render = () => {
+            const loopDuration = 8800;
+            const t = (performance.now() - startTime) % loopDuration;
+            const width = canvas.width;
+            const height = canvas.height;
+            const pad = 11;
+
+            ctx.clearRect(0, 0, width, height);
+            const bg = ctx.createLinearGradient(0, 0, width, height);
+            bg.addColorStop(0, '#f7fee7');
+            bg.addColorStop(0.52, '#ffffff');
+            bg.addColorStop(1, '#dcfce7');
+            ctx.fillStyle = bg;
+            ctx.fillRect(0, 0, width, height);
+
+            // Pantry loaded from database.
+            roundRect(pad, 12, width - pad * 2, 42, 8);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
+            ctx.fill();
+            ctx.strokeStyle = '#bbf7d0';
+            ctx.stroke();
+            drawText('My Pantry', pad + 9, 28, '#14532d', 12, '800');
+            drawText('PostgreSQL sync', width - 92, 28, '#16a34a', 8, '700');
+
+            pantryItems.forEach((item, i) => {
+                const progress = easeOut((t - i * 300) / 300);
+                if (progress <= 0) return;
+                const pillW = 50 + item.label.length * 2;
+                const step = (width - pad * 2 - 68) / (pantryItems.length - 1);
+                const x = pad + 8 + i * step;
+                const y = 34 + (1 - progress) * 8;
+                ctx.globalAlpha = progress;
+                roundRect(x, y, pillW, 15, 8);
+                ctx.fillStyle = item.color;
+                ctx.fill();
+                drawText(item.label, x + 8, y + 11, item.text, 8, '700');
+                ctx.globalAlpha = 1;
+            });
+
+            // API status bar.
+            const statusAlpha = fade(t, 1500, 400);
+            ctx.globalAlpha = statusAlpha;
+            roundRect(pad, 61, width - pad * 2, 20, 6);
+            ctx.fillStyle = '#ecfdf5';
+            ctx.fill();
+            ctx.stroke();
+            const dots = '.'.repeat(Math.floor((t / 260) % 4));
+            drawText(`Fetching matching recipes from MealDB${dots}`, pad + 9, 75, '#14532d', 9, '800');
+            ctx.globalAlpha = 1;
+
+            // Recipe cards slide in.
+            const cardY = 90;
+            const cardGap = 8;
+            const cardW = (width - pad * 2 - cardGap * 2) / 3;
+            recipeCards.forEach((recipe, i) => {
+                const progress = easeOut((t - (2300 + i * 250)) / 500);
+                if (progress <= 0) return;
+                const x = pad + i * (cardW + cardGap);
+                const y = cardY + (1 - progress) * 18;
+                ctx.globalAlpha = progress;
+                roundRect(x, y, cardW, 54, 8);
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+                ctx.strokeStyle = i === 0 && t > 3850 ? '#16a34a' : '#bbf7d0';
+                ctx.lineWidth = i === 0 && t > 3850 ? 2 : 1;
+                ctx.stroke();
+
+                ctx.fillStyle = recipe.icon;
+                ctx.beginPath();
+                ctx.arc(x + 17, y + 18, 9, 0, Math.PI * 2);
+                ctx.fill();
+                drawText(recipe.name, x + 31, y + 18, '#14532d', 8, '800');
+                drawText(`${recipe.match}% match`, x + 31, y + 33, '#15803d', 8, '700');
+                ctx.fillStyle = '#dcfce7';
+                ctx.fillRect(x + 9, y + 42, (cardW - 18) * recipe.match / 100, 4);
+                ctx.globalAlpha = 1;
+            });
+
+            // Groq AI missing-ingredient panel.
+            const groqProgress = easeOut((t - 3900) / 650);
+            if (groqProgress > 0) {
+                const panelX = pad;
+                const panelY = 149;
+                const panelW = width * 0.56;
+                const panelH = 42 * groqProgress;
+                roundRect(panelX, panelY, panelW, panelH, 8);
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+                ctx.strokeStyle = '#86efac';
+                ctx.stroke();
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(panelX, panelY, panelW, panelH);
+                ctx.clip();
+                drawText('Groq AI: Missing ingredients', panelX + 8, panelY + 14, '#166534', 9, '800');
+                missingItems.forEach((item, i) => {
+                    const itemProgress = fade(t, 4550 + i * 220, 240);
+                    if (itemProgress <= 0) return;
+                    const pillW = 52;
+                    const x = panelX + 8 + i * 55;
+                    const y = panelY + 23;
+                    ctx.globalAlpha = itemProgress;
+                    roundRect(x, y, pillW, 14, 7);
+                    ctx.fillStyle = '#fff7ed';
+                    ctx.fill();
+                    ctx.strokeStyle = '#f87171';
+                    ctx.stroke();
+                    drawBagIcon(x + 5, y + 2);
+                    drawText(item, x + 16, y + 10, '#991b1b', 7, '700');
+                    ctx.globalAlpha = 1;
+                });
+                ctx.restore();
+            }
+
+            // Nutrition chart.
+            const nutriProgress = easeOut((t - 5600) / 650);
+            if (nutriProgress > 0) {
+                const chartX = width * 0.61;
+                const chartY = 146;
+                const chartW = width * 0.34;
+                ctx.globalAlpha = nutriProgress;
+                roundRect(chartX, chartY, chartW, 48, 8);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+                ctx.fill();
+                ctx.strokeStyle = '#bbf7d0';
+                ctx.stroke();
+                drawText('Nutrition Info', chartX + 8, chartY + 13, '#14532d', 9, '800');
+                nutritionBars.forEach((bar, i) => {
+                    const y = chartY + 21 + i * 7;
+                    const barProgress = easeOut((t - (5900 + i * 160)) / 500);
+                    ctx.fillStyle = '#e5e7eb';
+                    ctx.fillRect(chartX + 56, y - 4, chartW - 66, 4);
+                    ctx.fillStyle = bar.color;
+                    ctx.fillRect(chartX + 56, y - 4, (chartW - 66) * (bar.value / 100) * barProgress, 4);
+                    drawText(bar.label, chartX + 8, y, '#365314', 7, '700');
+                });
+                ctx.globalAlpha = 1;
+            }
+
+            animationId = requestAnimationFrame(render);
+        };
+
+        render();
+
         return () => {
             window.removeEventListener('resize', init);
             cancelAnimationFrame(animationId);

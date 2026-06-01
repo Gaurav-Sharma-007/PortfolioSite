@@ -14,7 +14,8 @@ import {
   FinancierViz,
   EyeTrackerViz,
   ShoppingAgentViz,
-  ResilientViz
+  ResilientViz,
+  RecipeMixerViz
 } from './ProjectAnimations';
 
 import Counter from './Counter';
@@ -47,6 +48,7 @@ const ProjectCard = ({ project }) => {
     if (project.animationKey === 'eyeTracker') return <EyeTrackerViz />;
     if (project.animationKey === 'shoppingAgent') return <ShoppingAgentViz />;
     if (project.animationKey === 'resilient') return <ResilientViz />;
+    if (project.animationKey === 'recipeMixer') return <RecipeMixerViz />;
     if (project.title.includes('Alzheimer')) return <AlzheimerViz />;
     if (project.title.includes('Churn')) return <ChurnViz />;
     if (project.title.includes('SharePoint')) return <SharePointViz />;
