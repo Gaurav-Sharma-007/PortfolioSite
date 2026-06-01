@@ -360,7 +360,7 @@ export const SharePointViz = () => {
 
             tick++;
 
-            modules.forEach((m, i) => {
+            modules.forEach((m) => {
                 // Background for module
                 ctx.fillStyle = '#2d2d2d';
                 ctx.fillRect(m.x, m.y, m.w, m.h);
@@ -440,41 +440,92 @@ export const TitanicViz = () => {
         let state = 'sailing'; // sailing, impact, sinking, reset
         let sinkDelay = 0;
         let waveOffset = 0;
+        const stars = Array.from({ length: 28 }, (_, i) => ({
+            x: (i * 83) % 997 / 997,
+            y: 0.08 + ((i * 37) % 180) / 1000,
+            size: i % 5 === 0 ? 1.6 : 1,
+            alpha: 0.22 + (i % 7) * 0.07
+        }));
+        const portholes = Array.from({ length: 16 }, (_, i) => ({
+            x: 18 + (i % 8) * 11,
+            y: i < 8 ? 8 : 18,
+            warm: i % 3 !== 0
+        }));
 
         const render = () => {
-            ctx.fillStyle = '#050510'; // Deep night sky
+            const nightGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            nightGradient.addColorStop(0, '#02030a');
+            nightGradient.addColorStop(0.45, '#06091a');
+            nightGradient.addColorStop(1, '#071520');
+            ctx.fillStyle = nightGradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Stars
-            for (let i = 0; i < 10; i++) {
-                ctx.fillStyle = 'rgba(255,255,255,0.5)';
-                ctx.fillRect(i * 50 + 20, 20 + (i % 3) * 10, 1, 1);
-            }
 
             waveOffset += 0.05;
             const waterLevel = canvas.height * 0.65;
+            const pulse = Math.sin(waveOffset * 1.8) * 0.15 + 0.85;
+            const moonX = canvas.width * 0.15;
+            const moonY = canvas.height * 0.18;
+
+            ctx.save();
+            ctx.shadowBlur = 28;
+            ctx.shadowColor = 'rgba(155, 195, 255, 0.35)';
+            ctx.fillStyle = 'rgba(196, 220, 255, 0.75)';
+            ctx.beginPath();
+            ctx.arc(moonX, moonY, 18, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            const moonGlow = ctx.createRadialGradient(moonX, moonY, 6, moonX, moonY, canvas.width * 0.55);
+            moonGlow.addColorStop(0, 'rgba(120, 170, 255, 0.18)');
+            moonGlow.addColorStop(0.45, 'rgba(40, 75, 140, 0.08)');
+            moonGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = moonGlow;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            stars.forEach((star) => {
+                const twinkle = star.alpha + Math.sin(waveOffset * 2 + star.x * 20) * 0.08;
+                ctx.fillStyle = `rgba(230, 245, 255, ${twinkle})`;
+                ctx.fillRect(star.x * canvas.width, star.y * canvas.height, star.size, star.size);
+            });
 
             // Massive Iceberg (Jagged & Ominous)
             const iceX = canvas.width * 0.75;
-            ctx.fillStyle = '#e0f7fa';
+            ctx.save();
+            ctx.shadowBlur = 28;
+            ctx.shadowColor = 'rgba(126, 207, 255, 0.35)';
+            const iceGradient = ctx.createLinearGradient(iceX - 70, waterLevel - 140, iceX + 110, waterLevel + 25);
+            iceGradient.addColorStop(0, '#f4fbff');
+            iceGradient.addColorStop(0.45, '#9fd6f0');
+            iceGradient.addColorStop(1, '#315c78');
+            ctx.fillStyle = iceGradient;
             ctx.beginPath();
-            // Base (Extend below water)
-            ctx.moveTo(iceX - 50, waterLevel + 20);
+            ctx.moveTo(iceX - 62, waterLevel + 18);
             ctx.lineTo(iceX - 40, waterLevel - 10);
-            ctx.lineTo(iceX, waterLevel - 120); // Taller peak
+            ctx.lineTo(iceX - 10, waterLevel - 96);
+            ctx.lineTo(iceX + 5, waterLevel - 135);
             ctx.lineTo(iceX + 20, waterLevel - 80);
-            ctx.lineTo(iceX + 50, waterLevel - 130); // Second complex peak
-            ctx.lineTo(iceX + 100, waterLevel + 20);
+            ctx.lineTo(iceX + 50, waterLevel - 130);
+            ctx.lineTo(iceX + 112, waterLevel + 18);
             ctx.closePath();
             ctx.fill();
+            ctx.restore();
 
-            // Iceberg Reflection/Shadow (Subtle)
-            ctx.fillStyle = 'rgba(200, 240, 255, 0.1)';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+            ctx.lineWidth = 1;
             ctx.beginPath();
-            ctx.moveTo(iceX - 50, waterLevel + 20);
-            ctx.lineTo(iceX + 100, waterLevel + 20);
-            ctx.lineTo(iceX + 20, waterLevel + 80);
-            ctx.fill();
+            ctx.moveTo(iceX - 8, waterLevel - 92);
+            ctx.lineTo(iceX + 14, waterLevel - 12);
+            ctx.lineTo(iceX + 42, waterLevel - 118);
+            ctx.moveTo(iceX + 62, waterLevel - 72);
+            ctx.lineTo(iceX + 90, waterLevel + 10);
+            ctx.stroke();
+
+            const coldMist = ctx.createLinearGradient(iceX - 80, waterLevel - 20, iceX + 130, waterLevel + 25);
+            coldMist.addColorStop(0, 'rgba(95, 175, 220, 0)');
+            coldMist.addColorStop(0.5, 'rgba(160, 220, 255, 0.2)');
+            coldMist.addColorStop(1, 'rgba(95, 175, 220, 0)');
+            ctx.fillStyle = coldMist;
+            ctx.fillRect(iceX - 90, waterLevel - 18, 230, 42);
 
             // Ship Logic
             if (state === 'sailing') {
@@ -514,27 +565,56 @@ export const TitanicViz = () => {
             ctx.translate(shipX, shipY);
             ctx.rotate(rotation);
 
+            const lampGlow = ctx.createRadialGradient(72, -9, 4, 72, -9, 92);
+            lampGlow.addColorStop(0, `rgba(255, 207, 99, ${0.28 * pulse})`);
+            lampGlow.addColorStop(0.48, `rgba(255, 156, 55, ${0.08 * pulse})`);
+            lampGlow.addColorStop(1, 'rgba(255, 156, 55, 0)');
+            ctx.fillStyle = lampGlow;
+            ctx.fillRect(-25, -72, 180, 120);
+
+            const headlight = ctx.createLinearGradient(95, -12, 180, -36);
+            headlight.addColorStop(0, `rgba(255, 224, 142, ${0.28 * pulse})`);
+            headlight.addColorStop(1, 'rgba(255, 224, 142, 0)');
+            ctx.fillStyle = headlight;
+            ctx.beginPath();
+            ctx.moveTo(92, -9);
+            ctx.lineTo(180, -48);
+            ctx.lineTo(180, 3);
+            ctx.closePath();
+            ctx.fill();
+
             // Hull (Black & Red)
-            ctx.fillStyle = '#1a1a1a';
+            ctx.shadowBlur = 14;
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+            ctx.fillStyle = '#111217';
             ctx.beginPath();
             ctx.moveTo(0, 0);
             ctx.lineTo(120, 0); // Decent length
             ctx.lineTo(110, 30);
             ctx.lineTo(10, 30);
             ctx.fill();
+            ctx.shadowBlur = 0;
 
             // Red bottom trim
-            ctx.fillStyle = '#5e0a0a';
+            ctx.fillStyle = '#631111';
             ctx.fillRect(10, 25, 100, 5);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.14)';
+            ctx.fillRect(5, 2, 108, 2);
 
             // Superstructure (White decks)
-            ctx.fillStyle = '#f0f0f0';
+            ctx.fillStyle = '#dce6ed';
             ctx.fillRect(15, -15, 80, 15); // Main deck
-            ctx.fillRect(25, -25, 60, 10); // Upper deck
+            ctx.fillStyle = '#eef5f9';
+            ctx.fillRect(25, -25, 60, 10);
+            ctx.fillStyle = 'rgba(13, 30, 47, 0.35)';
+            ctx.fillRect(16, -3, 78, 3);
 
             // Funnels (Iconic Yellow/Black)
             const drawFunnel = (x) => {
-                ctx.fillStyle = '#e6bf00'; // Gold
+                const funnelGradient = ctx.createLinearGradient(x, -50, x + 10, -25);
+                funnelGradient.addColorStop(0, '#f4d46c');
+                funnelGradient.addColorStop(1, '#9c5f12');
+                ctx.fillStyle = funnelGradient;
                 ctx.beginPath();
                 ctx.moveTo(x, -25);
                 ctx.lineTo(x + 10, -25);
@@ -551,16 +631,22 @@ export const TitanicViz = () => {
             drawFunnel(70);
 
             // Lights (Portholes) - Luxury feel
-            ctx.fillStyle = '#ffeb3b'; // Yellow light
-            for (let i = 20; i < 100; i += 10) {
-                if (Math.random() > 0.1) ctx.fillRect(i, 8, 2, 2);
-                if (Math.random() > 0.1) ctx.fillRect(i + 5, 18, 2, 2);
-            }
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = 'rgba(255, 214, 117, 0.9)';
+            portholes.forEach((light) => {
+                ctx.fillStyle = light.warm ? '#ffd873' : 'rgba(255, 244, 196, 0.45)';
+                ctx.fillRect(light.x, light.y, 3, 2);
+            });
+            ctx.shadowBlur = 0;
 
             ctx.restore();
 
             // Draw Ocean Waves
-            ctx.fillStyle = 'rgba(0, 100, 200, 0.6)';
+            const waterGradient = ctx.createLinearGradient(0, waterLevel, 0, canvas.height);
+            waterGradient.addColorStop(0, 'rgba(18, 80, 126, 0.72)');
+            waterGradient.addColorStop(0.45, 'rgba(8, 42, 82, 0.88)');
+            waterGradient.addColorStop(1, 'rgba(2, 12, 28, 0.98)');
+            ctx.fillStyle = waterGradient;
             ctx.beginPath();
             ctx.moveTo(0, canvas.height);
             ctx.lineTo(0, waterLevel);
@@ -571,8 +657,45 @@ export const TitanicViz = () => {
             ctx.lineTo(canvas.width, canvas.height);
             ctx.fill();
 
+            const submergedIce = ctx.createLinearGradient(iceX - 76, waterLevel + 8, iceX + 124, canvas.height);
+            submergedIce.addColorStop(0, 'rgba(184, 238, 255, 0.36)');
+            submergedIce.addColorStop(0.5, 'rgba(65, 142, 184, 0.18)');
+            submergedIce.addColorStop(1, 'rgba(16, 45, 78, 0.42)');
+            ctx.fillStyle = submergedIce;
+            ctx.beginPath();
+            ctx.moveTo(iceX - 62, waterLevel + 5);
+            ctx.lineTo(iceX + 112, waterLevel + 5);
+            ctx.lineTo(iceX + 88, canvas.height);
+            ctx.lineTo(iceX + 24, canvas.height);
+            ctx.lineTo(iceX - 74, canvas.height);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.strokeStyle = 'rgba(205, 242, 255, 0.16)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(iceX - 34, waterLevel + 24);
+            ctx.lineTo(iceX - 18, canvas.height);
+            ctx.moveTo(iceX + 22, waterLevel + 10);
+            ctx.lineTo(iceX + 54, canvas.height);
+            ctx.moveTo(iceX + 78, waterLevel + 24);
+            ctx.lineTo(iceX + 90, canvas.height);
+            ctx.stroke();
+
+            const moonPath = ctx.createLinearGradient(moonX - 20, waterLevel, moonX + 55, canvas.height);
+            moonPath.addColorStop(0, 'rgba(155, 195, 255, 0.16)');
+            moonPath.addColorStop(1, 'rgba(155, 195, 255, 0)');
+            ctx.fillStyle = moonPath;
+            ctx.beginPath();
+            ctx.moveTo(moonX - 22, waterLevel);
+            ctx.lineTo(moonX + 38, waterLevel);
+            ctx.lineTo(moonX + 90, canvas.height);
+            ctx.lineTo(moonX - 70, canvas.height);
+            ctx.closePath();
+            ctx.fill();
+
             // Foreground Wave Layer (Parallax)
-            ctx.fillStyle = 'rgba(0, 80, 180, 0.8)';
+            ctx.fillStyle = 'rgba(4, 30, 74, 0.86)';
             ctx.beginPath();
             ctx.moveTo(0, canvas.height);
             const frontWaterLevel = waterLevel + 15;
@@ -582,6 +705,29 @@ export const TitanicViz = () => {
             }
             ctx.lineTo(canvas.width, canvas.height);
             ctx.fill();
+
+            ctx.strokeStyle = 'rgba(135, 204, 255, 0.28)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for (let i = 0; i <= canvas.width; i += 28) {
+                const y = frontWaterLevel + Math.sin(i * 0.03 + waveOffset * 1.5) * 8;
+                ctx.moveTo(i, y);
+                ctx.lineTo(i + 14, y + Math.sin(waveOffset + i) * 2);
+            }
+            ctx.stroke();
+
+            const vignette = ctx.createRadialGradient(
+                canvas.width * 0.5,
+                canvas.height * 0.45,
+                canvas.width * 0.2,
+                canvas.width * 0.5,
+                canvas.height * 0.5,
+                canvas.width * 0.72
+            );
+            vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
+            vignette.addColorStop(1, 'rgba(0, 0, 0, 0.5)');
+            ctx.fillStyle = vignette;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             animationId = requestAnimationFrame(render);
         };
@@ -701,6 +847,7 @@ export const DiabetesViz = () => {
 
         let startTime = null;
         const LOOP_DURATION = 7000;
+        let candies = [];
 
         const render = (timestamp) => {
             if (!startTime) startTime = timestamp;
@@ -713,17 +860,36 @@ export const DiabetesViz = () => {
 
             // --- REALISTIC ENVIRONMENT ---
 
-            // Wall Gradient (Daylight/Ambient)
+            // Wall Gradient (warm room with soft evening light)
             const wallGrad = ctx.createLinearGradient(0, 0, w, h);
-            wallGrad.addColorStop(0, '#d8d8e8');
-            wallGrad.addColorStop(1, '#a0a0b0');
+            wallGrad.addColorStop(0, '#d8d9e6');
+            wallGrad.addColorStop(0.5, '#b3a8b8');
+            wallGrad.addColorStop(1, '#706776');
             ctx.fillStyle = wallGrad;
+            ctx.fillRect(0, 0, w, h);
+
+            const roomGlow = ctx.createRadialGradient(w * 0.28, h * 0.12, 10, w * 0.28, h * 0.12, w * 0.75);
+            roomGlow.addColorStop(0, 'rgba(255, 238, 184, 0.32)');
+            roomGlow.addColorStop(0.45, 'rgba(218, 164, 111, 0.08)');
+            roomGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = roomGlow;
             ctx.fillRect(0, 0, w, h);
 
             // Floor
             const floorH = h * 0.3;
-            ctx.fillStyle = '#6d4c41'; // Wood
+            const floorGrad = ctx.createLinearGradient(0, h - floorH, 0, h);
+            floorGrad.addColorStop(0, '#7a5044');
+            floorGrad.addColorStop(1, '#3b231f');
+            ctx.fillStyle = floorGrad;
             ctx.fillRect(0, h - floorH, w, floorH);
+            ctx.strokeStyle = 'rgba(255, 220, 180, 0.12)';
+            ctx.lineWidth = 1;
+            for (let y = h - floorH + 12; y < h; y += 16) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(w, y + 5);
+                ctx.stroke();
+            }
 
             // Window (Back Wall - Left Center)
             const winX = w * 0.15;
@@ -778,7 +944,6 @@ export const DiabetesViz = () => {
             let armState = 0;
             let fallAngle = 0;
             let isUnconscious = false;
-            let candies = [];
 
             if (timeS < 5.5) {
                 bellyGrowth = (timeS / 5.5) * 22;
@@ -803,10 +968,10 @@ export const DiabetesViz = () => {
             }
 
             // --- TV (Running Horse) ---
-            const tvX = w * 0.72;
-            const tvY = h * 0.50;
-            const tvW = 80;
-            const tvH = 50;
+            const tvX = w * 0.68;
+            const tvY = h * 0.42;
+            const tvW = 100;
+            const tvH = 62;
 
             // TV Shadow
             ctx.fillStyle = 'rgba(0,0,0,0.3)';
@@ -814,113 +979,160 @@ export const DiabetesViz = () => {
             ctx.fillRect(tvX + 5, tvY + 5, tvW, tvH + 20);
             ctx.filter = 'none';
 
+            const tvGlow = ctx.createRadialGradient(tvX + tvW / 2, tvY + tvH / 2, 8, tvX + tvW / 2, tvY + tvH / 2, 90);
+            tvGlow.addColorStop(0, 'rgba(88, 180, 255, 0.26)');
+            tvGlow.addColorStop(1, 'rgba(88, 180, 255, 0)');
+            ctx.fillStyle = tvGlow;
+            ctx.fillRect(tvX - 35, tvY - 35, tvW + 70, tvH + 90);
+
             // Stand
             ctx.fillStyle = '#1a1a1a';
             ctx.fillRect(tvX + 25, tvY + tvH, 30, 15);
-            ctx.fillStyle = '#111';
-            ctx.fillRect(tvX, tvY, tvW, tvH);
+            const tvFrame = ctx.createLinearGradient(tvX, tvY, tvX + tvW, tvY + tvH);
+            tvFrame.addColorStop(0, '#23232a');
+            tvFrame.addColorStop(0.5, '#07070a');
+            tvFrame.addColorStop(1, '#2b2b31');
+            ctx.fillStyle = tvFrame;
+            ctx.beginPath();
+            ctx.roundRect(tvX, tvY, tvW, tvH, 6);
+            ctx.fill();
 
             // Content
             ctx.save();
-            ctx.beginPath(); ctx.rect(tvX + 2, tvY + 2, tvW - 4, tvH - 4); ctx.clip();
+            ctx.beginPath(); ctx.roundRect(tvX + 4, tvY + 4, tvW - 8, tvH - 8, 4); ctx.clip();
             if (timeS > 6.8) {
                 ctx.fillStyle = '#000'; ctx.fillRect(tvX, tvY, tvW, tvH);
             } else {
-                // Background
-                ctx.fillStyle = '#87CEEB'; ctx.fillRect(tvX, tvY, tvW, tvH);
-                ctx.fillStyle = '#4CAF50'; ctx.fillRect(tvX, tvY + 25, tvW, 25);
+                const screenGrad = ctx.createLinearGradient(tvX, tvY, tvX, tvY + tvH);
+                screenGrad.addColorStop(0, '#8fd7ff');
+                screenGrad.addColorStop(0.5, '#bce9ff');
+                screenGrad.addColorStop(1, '#4b8b45');
+                ctx.fillStyle = screenGrad;
+                ctx.fillRect(tvX, tvY, tvW, tvH);
 
-                // Scrolling Forest Trees (Taller & Dense)
-                const scrollX = (timestamp * 0.08) % 60;
-                ctx.fillStyle = '#1b5e20'; // Dark Green forest
+                ctx.fillStyle = 'rgba(255, 234, 151, 0.78)';
+                ctx.beginPath();
+                ctx.arc(tvX + 15, tvY + 14, 7, 0, Math.PI * 2);
+                ctx.fill();
+
+                const hillScroll = (timestamp * 0.018) % tvW;
+                ctx.fillStyle = '#70b96a';
+                ctx.beginPath();
+                ctx.moveTo(tvX - hillScroll, tvY + 42);
+                ctx.quadraticCurveTo(tvX + 20 - hillScroll, tvY + 22, tvX + 58 - hillScroll, tvY + 42);
+                ctx.quadraticCurveTo(tvX + 85 - hillScroll, tvY + 25, tvX + tvW + 22 - hillScroll, tvY + 42);
+                ctx.lineTo(tvX + tvW + 22, tvY + tvH);
+                ctx.lineTo(tvX - hillScroll, tvY + tvH);
+                ctx.fill();
+                ctx.fillRect(tvX + tvW - hillScroll, tvY + 42, tvW, tvH);
+
+                ctx.fillStyle = '#3e7a3b';
+                ctx.fillRect(tvX, tvY + 42, tvW, tvH - 42);
+                ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+                ctx.lineWidth = 1;
                 for (let i = 0; i < 4; i++) {
-                    const treeX = tvX + (i * 30) - scrollX;
-                    if (treeX > tvX - 20 && treeX < tvX + tvW + 20) {
+                    const lineY = tvY + 48 + i * 4;
+                    const lineX = tvX + ((timestamp * 0.08 + i * 21) % tvW);
+                    ctx.beginPath();
+                    ctx.moveTo(tvX, lineY);
+                    ctx.lineTo(lineX, lineY - 2);
+                    ctx.lineTo(tvX + tvW, lineY + 1);
+                    ctx.stroke();
+                }
+
+                // Scrolling forest with swaying leaves and trunks.
+                const scrollX = (timestamp * 0.105) % 72;
+                for (let i = 0; i < 6; i++) {
+                    const treeX = tvX + (i * 24) - scrollX;
+                    if (treeX > tvX - 24 && treeX < tvX + tvW + 24) {
+                        const sway = Math.sin(timestamp * 0.006 + i) * 2;
+                        ctx.fillStyle = '#5b3a21';
+                        ctx.fillRect(treeX + 3, tvY + 27, 4, 25);
+                        ctx.fillStyle = i % 2 ? '#175f2b' : '#1f7a35';
                         ctx.beginPath();
-                        ctx.moveTo(treeX, tvY + tvH);
-                        ctx.lineTo(treeX + 6, tvY + 5); // Trunk top (Much Taller)
-                        ctx.lineTo(treeX - 10, tvY + 30); // Leaves L
-                        ctx.lineTo(treeX + 6, tvY + 15);
-                        ctx.lineTo(treeX + 22, tvY + 30); // Leaves R
-                        ctx.lineTo(treeX + 6, tvY + 5);
-                        ctx.lineTo(treeX + 12, tvY + tvH);
+                        ctx.ellipse(treeX + 5 + sway, tvY + 21, 13, 16, 0.08 * sway, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = 'rgba(109, 194, 83, 0.55)';
+                        ctx.beginPath();
+                        ctx.arc(treeX + 1 + sway, tvY + 15, 5, 0, Math.PI * 2);
+                        ctx.arc(treeX + 11 + sway, tvY + 19, 5, 0, Math.PI * 2);
                         ctx.fill();
                     }
                 }
 
                 // Horse Shadow
-                const horseY = tvY + 32 + Math.sin(timestamp * 0.02) * 1.5;
-                const hx = tvX + 35;
-                ctx.fillStyle = 'rgba(0,0,0,0.3)';
-                ctx.beginPath(); ctx.ellipse(hx + 8, horseY + 14, 12, 3, 0, 0, Math.PI * 2); ctx.fill();
+                const gallop = timestamp * 0.024;
+                const horseY = tvY + 37 + Math.sin(gallop) * 1.8;
+                const hx = tvX + 42;
+                ctx.fillStyle = 'rgba(0,0,0,0.28)';
+                ctx.beginPath(); ctx.ellipse(hx + 11, horseY + 15, 20, 4, 0, 0, Math.PI * 2); ctx.fill();
 
-                // Horse (Premium Detailed Shape)
-                // Using gradient for definition and 3D look
+                // Horse (more anatomical, with gallop motion)
                 const horseGrad = ctx.createLinearGradient(hx, horseY - 10, hx, horseY + 10);
-                horseGrad.addColorStop(0, '#5d4037'); // Brown
-                horseGrad.addColorStop(1, '#3e2723'); // Darker Brown
+                horseGrad.addColorStop(0, '#7a4d32');
+                horseGrad.addColorStop(0.55, '#5a3326');
+                horseGrad.addColorStop(1, '#2c1713');
                 ctx.fillStyle = horseGrad;
 
                 ctx.beginPath();
-                // Hindquarters
-                ctx.arc(hx, horseY + 2, 5, 0, Math.PI * 2);
-                // Body
-                ctx.moveTo(hx, horseY - 1);
-                ctx.quadraticCurveTo(hx + 8, horseY - 2, hx + 15, horseY); // Back
-                ctx.lineTo(hx + 14, horseY + 6); // Belly back
-                ctx.lineTo(hx + 2, horseY + 5); // Belly front
-                // Chest/Neck
-                ctx.moveTo(hx + 15, horseY);
-                ctx.quadraticCurveTo(hx + 14, horseY - 6, hx + 18, horseY - 8); // Neck top
-                ctx.lineTo(hx + 19, horseY - 5); // Head Join
-                // Head
-                ctx.moveTo(hx + 18, horseY - 8);
-                ctx.lineTo(hx + 22, horseY - 6); // Forehead
-                ctx.lineTo(hx + 23, horseY - 3); // Nose
-                ctx.lineTo(hx + 21, horseY - 2); // Jaw
-                ctx.lineTo(hx + 18, horseY - 4); // Throat
-                ctx.lineTo(hx + 15, horseY + 4); // Neck bottom
+                ctx.ellipse(hx + 8, horseY + 1, 17, 8, -0.08, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Ears
-                ctx.beginPath(); ctx.moveTo(hx + 19, horseY - 8); ctx.lineTo(hx + 20, horseY - 10); ctx.lineTo(hx + 21, horseY - 8); ctx.fill();
-
-                // Mane (Flowing Black)
-                ctx.fillStyle = '#000';
                 ctx.beginPath();
-                ctx.moveTo(hx + 18, horseY - 9);
-                ctx.quadraticCurveTo(hx + 16, horseY - 4, hx + 18, horseY + 2);
-                ctx.lineTo(hx + 16, horseY); // Taper
+                ctx.moveTo(hx + 20, horseY - 2);
+                ctx.quadraticCurveTo(hx + 22, horseY - 11, hx + 29, horseY - 14);
+                ctx.quadraticCurveTo(hx + 35, horseY - 11, hx + 34, horseY - 6);
+                ctx.quadraticCurveTo(hx + 31, horseY - 3, hx + 26, horseY - 3);
+                ctx.quadraticCurveTo(hx + 23, horseY + 4, hx + 20, horseY + 6);
                 ctx.fill();
 
-                // Tail (Flowing Black)
-                ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
-                ctx.beginPath(); ctx.moveTo(hx, horseY); ctx.quadraticCurveTo(hx - 8, horseY - 5, hx - 10, horseY + 2 + Math.sin(timestamp * 0.03) * 3); ctx.stroke();
+                ctx.fillStyle = '#19100e';
+                ctx.beginPath();
+                ctx.moveTo(hx + 24, horseY - 11);
+                ctx.quadraticCurveTo(hx + 17, horseY - 8, hx + 17, horseY + 2);
+                ctx.quadraticCurveTo(hx + 20, horseY - 2, hx + 24, horseY - 11);
+                ctx.fill();
+
+                ctx.fillStyle = '#20110e';
+                ctx.beginPath();
+                ctx.moveTo(hx + 31, horseY - 15);
+                ctx.lineTo(hx + 33, horseY - 20);
+                ctx.lineTo(hx + 36, horseY - 14);
+                ctx.lineTo(hx + 38, horseY - 18);
+                ctx.lineTo(hx + 39, horseY - 10);
+                ctx.fill();
+
+                ctx.strokeStyle = '#1c100d';
+                ctx.lineWidth = 3;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(hx - 8, horseY - 1);
+                ctx.quadraticCurveTo(hx - 22, horseY - 12, hx - 25, horseY + 1 + Math.sin(gallop) * 4);
+                ctx.stroke();
 
                 // Legs (Articulated - 2 Phases)
-                ctx.strokeStyle = '#3e2723'; ctx.lineWidth = 1.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-                const t = timestamp * 0.025;
+                const drawLeg = (x, phase, color, width) => {
+                    const upper = Math.sin(gallop + phase) * 7;
+                    const lower = Math.cos(gallop + phase) * 5;
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = width;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.beginPath();
+                    ctx.moveTo(hx + x, horseY + 6);
+                    ctx.lineTo(hx + x + upper * 0.45, horseY + 12);
+                    ctx.lineTo(hx + x + upper + lower, horseY + 18);
+                    ctx.stroke();
+                };
+                drawLeg(-2, 0, '#2f1b16', 2);
+                drawLeg(15, 1.2, '#2f1b16', 2);
+                drawLeg(0, Math.PI, '#6d432f', 2.4);
+                drawLeg(17, Math.PI + 1.2, '#6d432f', 2.4);
 
-                // Back Far
-                ctx.beginPath(); ctx.moveTo(hx + 1, horseY + 3);
-                ctx.lineTo(hx - 2 + Math.cos(t) * 4, horseY + 8 + Math.sin(t));
-                ctx.lineTo(hx - 4 + Math.cos(t) * 4, horseY + 12); ctx.stroke();
-
-                // Front Far
-                ctx.beginPath(); ctx.moveTo(hx + 13, horseY + 4);
-                ctx.lineTo(hx + 15 + Math.cos(t + 0.5) * 4, horseY + 7 + Math.sin(t + 0.5));
-                ctx.lineTo(hx + 14 + Math.cos(t + 0.5) * 4, horseY + 11); ctx.stroke();
-
-                // Back Near
-                ctx.strokeStyle = '#5d4037'; // Lighter for depth
-                ctx.beginPath(); ctx.moveTo(hx + 1, horseY + 3);
-                ctx.lineTo(hx + Math.cos(t + 3) * 4, horseY + 8 + Math.sin(t + 3));
-                ctx.lineTo(hx - 1 + Math.cos(t + 3) * 4, horseY + 12); ctx.stroke();
-
-                // Front Near
-                ctx.beginPath(); ctx.moveTo(hx + 13, horseY + 4);
-                ctx.lineTo(hx + 16 + Math.cos(t + 3.5) * 4, horseY + 6 + Math.sin(t + 3.5));
-                ctx.lineTo(hx + 18 + Math.cos(t + 3.5) * 4, horseY + 10); ctx.stroke();
+                ctx.fillStyle = '#f3e0a8';
+                ctx.beginPath();
+                ctx.arc(hx + 33, horseY - 8, 1, 0, Math.PI * 2);
+                ctx.fill();
             }
             ctx.restore();
 
@@ -929,11 +1141,16 @@ export const DiabetesViz = () => {
             const cy = h * 0.60;
 
             // Couch
-            ctx.fillStyle = '#b71c1c'; // Rich Red
-            ctx.shadowBlur = 15; ctx.shadowColor = 'rgba(0,0,0,0.4)';
+            const couchBack = ctx.createLinearGradient(cx - 30, cy, cx + 125, cy + 70);
+            couchBack.addColorStop(0, '#d53849');
+            couchBack.addColorStop(1, '#74111c');
+            ctx.fillStyle = couchBack;
+            ctx.shadowBlur = 18; ctx.shadowColor = 'rgba(0,0,0,0.45)';
             ctx.beginPath(); ctx.roundRect(cx - 20, cy, 140, 50, 8); ctx.fill();
             ctx.shadowBlur = 0;
-            ctx.fillStyle = '#d32f2f'; ctx.beginPath(); ctx.roundRect(cx - 20, cy + 30, 140, 35, 8); ctx.fill();
+            ctx.fillStyle = '#c82c3d'; ctx.beginPath(); ctx.roundRect(cx - 20, cy + 30, 140, 35, 8); ctx.fill();
+            ctx.fillStyle = 'rgba(255,255,255,0.14)';
+            ctx.fillRect(cx - 14, cy + 7, 123, 3);
             // Armrest
             ctx.fillStyle = '#800000'; ctx.beginPath(); ctx.roundRect(cx - 30, cy + 20, 20, 45, 8); ctx.fill();
 
@@ -945,90 +1162,192 @@ export const DiabetesViz = () => {
             ctx.translate(manX, manY);
             if (isUnconscious) ctx.rotate(fallAngle);
 
-            // Detailed Clothing (Realistic Jeans)
-            ctx.fillStyle = '#1a237e'; // Dark Denim
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.24)';
             ctx.beginPath();
-            ctx.moveTo(-5, -5); // Hip
-            ctx.quadraticCurveTo(20, -8, 42, -2); // Thigh top gentle curve
-            ctx.quadraticCurveTo(48, 2, 48, 15); // Knee cap roundness
-            ctx.lineTo(50, 42); // Shin front (slight angle)
-            ctx.lineTo(36, 42); // Ankle/Shin back
-            ctx.quadraticCurveTo(34, 15, 30, 12); // Calf to Knee back
-            ctx.lineTo(-5, 12); // Thigh bottom
+            ctx.ellipse(24, 48, 38, 8, 0, 0, Math.PI * 2);
             ctx.fill();
 
-            // Shoes (Sneakers)
-            ctx.fillStyle = '#333';
+            // Legs with separate thighs, knees, and lower legs.
+            const denim = ctx.createLinearGradient(-10, -2, 62, 45);
+            denim.addColorStop(0, '#2e4f8f');
+            denim.addColorStop(1, '#0d1b4c');
+            ctx.fillStyle = denim;
             ctx.beginPath();
-            ctx.moveTo(36, 42);
-            ctx.lineTo(50, 42);
-            ctx.quadraticCurveTo(62, 50, 62, 52); // Toe curve
-            ctx.lineTo(60, 54); // Sole front
-            ctx.lineTo(36, 54); // Sole back
+            ctx.moveTo(-7, -6);
+            ctx.quadraticCurveTo(12, -10, 29, -2);
+            ctx.quadraticCurveTo(42, 4, 45, 14);
+            ctx.quadraticCurveTo(43, 21, 35, 20);
+            ctx.quadraticCurveTo(15, 15, -8, 12);
+            ctx.closePath();
             ctx.fill();
-            // Laces/Detail
+
+            ctx.beginPath();
+            ctx.moveTo(34, 17);
+            ctx.quadraticCurveTo(48, 19, 53, 31);
+            ctx.quadraticCurveTo(56, 39, 51, 45);
+            ctx.lineTo(39, 44);
+            ctx.quadraticCurveTo(39, 30, 30, 21);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = 'rgba(255,255,255,0.12)';
+            ctx.fillRect(2, 3, 28, 2);
+            ctx.strokeStyle = 'rgba(8, 14, 48, 0.75)';
+            ctx.lineWidth = 1.3;
+            ctx.beginPath(); ctx.moveTo(29, 7); ctx.quadraticCurveTo(35, 13, 36, 21); ctx.stroke();
+
+            // Shoes
+            ctx.fillStyle = '#202025';
+            ctx.beginPath();
+            ctx.moveTo(38, 43);
+            ctx.lineTo(53, 44);
+            ctx.quadraticCurveTo(64, 48, 66, 53);
+            ctx.quadraticCurveTo(52, 57, 35, 53);
+            ctx.quadraticCurveTo(34, 48, 38, 43);
+            ctx.fill();
             ctx.strokeStyle = '#fff'; ctx.lineWidth = 1;
-            ctx.beginPath(); ctx.moveTo(42, 42); ctx.lineTo(48, 45); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(44, 41); ctx.lineTo(50, 44); ctx.stroke();
-            // Sole Line
-            ctx.strokeStyle = '#ccc'; ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.moveTo(36, 54); ctx.lineTo(60, 54); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(44, 45); ctx.lineTo(51, 48); ctx.moveTo(47, 44); ctx.lineTo(54, 47); ctx.stroke();
+            ctx.strokeStyle = '#cfcfcf'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(35, 53); ctx.lineTo(64, 53); ctx.stroke();
 
-            // Shirt (Button up)
-            const bellyR = 22 + bellyGrowth;
-            const shirtGrad = ctx.createRadialGradient(10, -25, 2, 10, -25, bellyR);
+            // Torso: shoulders, curved shirt, and growing abdomen.
+            const bellyR = 18 + bellyGrowth * 0.72;
+            const shirtGrad = ctx.createRadialGradient(8, -25, 2, 8, -25, bellyR + 24);
             shirtGrad.addColorStop(0, '#ffffff');
-            shirtGrad.addColorStop(1, '#ddd');
+            shirtGrad.addColorStop(0.55, '#f2f2eb');
+            shirtGrad.addColorStop(1, '#cfcfd5');
             ctx.fillStyle = shirtGrad;
-            ctx.beginPath(); ctx.ellipse(10, -25, bellyR, 28, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(-13, -43);
+            ctx.quadraticCurveTo(3, -55, 24, -45);
+            ctx.quadraticCurveTo(42, -35, 31 + bellyGrowth * 0.55, -14);
+            ctx.quadraticCurveTo(22 + bellyGrowth * 0.45, 6, -4, 3);
+            ctx.quadraticCurveTo(-18, -14, -13, -43);
+            ctx.fill();
+
+            ctx.fillStyle = 'rgba(255,255,255,0.42)';
+            ctx.beginPath();
+            ctx.ellipse(15 + bellyGrowth * 0.25, -23, bellyR, 22, -0.12, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = 'rgba(120, 120, 130, 0.7)';
+            ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(14, -44); ctx.quadraticCurveTo(18, -26, 18 + bellyGrowth * 0.5, -4); ctx.stroke();
 
             // Buttons
-            ctx.fillStyle = '#ccc';
-            for (let i = 0; i < 3; i++) ctx.fillRect(15 + bellyGrowth * 0.8, -40 + i * 15, 3, 3);
+            ctx.fillStyle = '#a8a8ad';
+            for (let i = 0; i < 3; i++) {
+                ctx.beginPath();
+                ctx.arc(16 + bellyGrowth * 0.45, -36 + i * 12, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
 
-            // Head
-            ctx.fillStyle = '#eac086'; // Skin
-            ctx.beginPath(); ctx.arc(10, -58, 14, 0, Math.PI * 2); ctx.fill();
             // Neck
-            ctx.fillRect(2, -45, 16, 10);
+            const skin = '#e6b57d';
+            ctx.fillStyle = skin;
+            ctx.beginPath();
+            ctx.roundRect(1, -53, 15, 14, 5);
+            ctx.fill();
+
+            // Shirt collar
+            ctx.fillStyle = '#ececf0';
+            ctx.beginPath();
+            ctx.moveTo(1, -42);
+            ctx.lineTo(11, -35);
+            ctx.lineTo(15, -45);
+            ctx.lineTo(21, -35);
+            ctx.lineTo(27, -43);
+            ctx.lineTo(20, -48);
+            ctx.lineTo(8, -48);
+            ctx.closePath();
+            ctx.fill();
+
+            // Head and face profile
+            ctx.fillStyle = skin;
+            ctx.beginPath();
+            ctx.ellipse(11, -66, 13, 16, -0.08, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(23, -64, 4, 5, -0.2, 0, Math.PI * 2);
+            ctx.fill();
 
             // Hair (Side part)
             ctx.fillStyle = '#3e2723';
-            ctx.beginPath(); ctx.arc(10, -60, 15, Math.PI, 0.2);
-            ctx.bezierCurveTo(25, -55, 25, -70, 8, -65); ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(-2, -67);
+            ctx.quadraticCurveTo(0, -84, 16, -82);
+            ctx.quadraticCurveTo(29, -78, 24, -62);
+            ctx.quadraticCurveTo(15, -70, 3, -68);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = '#2a1714';
+            ctx.beginPath(); ctx.arc(1, -64, 5, 0, Math.PI * 2); ctx.fill();
 
             // Face
             if (!isUnconscious) {
-                ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(16, -60, 2, 0, Math.PI * 2); ctx.fill();
-                ctx.fillStyle = '#a1887f'; ctx.beginPath(); ctx.arc(22, -58, 3, 0, Math.PI * 2); ctx.fill(); // Nose
+                ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(16, -68, 1.8, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = '#9c6b4e'; ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.moveTo(20, -65); ctx.quadraticCurveTo(26, -63, 20, -60); ctx.stroke();
                 // Mouth
                 if (armState < 0.2) {
-                    ctx.fillStyle = '#8a3a3a'; ctx.beginPath(); ctx.ellipse(18, -52, 3, 2, 0, 0, Math.PI * 2); ctx.fill();
+                    ctx.strokeStyle = '#8a3a3a'; ctx.lineWidth = 1.5;
+                    ctx.beginPath(); ctx.arc(18, -55, 4, 0.1, Math.PI - 0.1); ctx.stroke();
                 } else {
-                    ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(18, -52, 4, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = '#4b1719'; ctx.beginPath(); ctx.ellipse(19, -55, 3.2, 4, 0, 0, Math.PI * 2); ctx.fill();
                 }
             } else {
                 ctx.strokeStyle = '#333'; ctx.lineWidth = 1.5;
-                ctx.beginPath(); ctx.moveTo(13, -64); ctx.lineTo(19, -58); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(19, -64); ctx.lineTo(13, -58); ctx.stroke();
-                ctx.fillStyle = 'pink'; ctx.beginPath(); ctx.arc(20, -48, 4, 0, Math.PI); ctx.fill();
+                ctx.beginPath(); ctx.moveTo(11, -71); ctx.lineTo(17, -65); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(17, -71); ctx.lineTo(11, -65); ctx.stroke();
+                ctx.fillStyle = '#ef9aa8'; ctx.beginPath(); ctx.arc(21, -52, 4, 0, Math.PI); ctx.fill();
             }
 
-            // Arms
-            ctx.strokeStyle = '#eac086'; ctx.lineWidth = 10; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-            ctx.beginPath(); ctx.moveTo(8, -44);
+            // Arms: shirt sleeves plus skin forearms.
+            ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            ctx.strokeStyle = '#d6d6dc';
+            ctx.lineWidth = 12;
+            ctx.beginPath();
+            ctx.moveTo(-6, -39);
+            ctx.quadraticCurveTo(-25, -28, -17, -8);
+            ctx.stroke();
+            ctx.strokeStyle = skin;
+            ctx.lineWidth = 8;
+            ctx.beginPath();
+            ctx.moveTo(-18, -11);
+            ctx.quadraticCurveTo(-11, 2, 3, -2);
+            ctx.stroke();
+
+            ctx.strokeStyle = '#d6d6dc';
+            ctx.lineWidth = 12;
+            ctx.beginPath();
+            ctx.moveTo(18, -39);
             if (!isUnconscious) {
-                if (armState > 0.5) ctx.quadraticCurveTo(40, -20, 25, -50);
-                else ctx.quadraticCurveTo(35, -25, 25, -5);
+                if (armState > 0.5) ctx.quadraticCurveTo(37, -31, 28, -54);
+                else ctx.quadraticCurveTo(37, -22, 26, -3);
             } else {
-                ctx.quadraticCurveTo(35, -20, 35, 25); // Limp dangle
+                ctx.quadraticCurveTo(35, -20, 32, 26);
+            }
+            ctx.stroke();
+
+            ctx.strokeStyle = skin;
+            ctx.lineWidth = 8;
+            ctx.beginPath();
+            ctx.moveTo(25, -30);
+            if (!isUnconscious) {
+                if (armState > 0.5) ctx.quadraticCurveTo(37, -44, 28, -55);
+                else ctx.quadraticCurveTo(35, -17, 27, -3);
+            } else {
+                ctx.quadraticCurveTo(39, 1, 33, 27);
             }
             ctx.stroke();
 
             // Candy in Hand (only if awake)
             if (armState > 0.5 && !isUnconscious) {
                 ctx.fillStyle = `hsl(${timeS * 120}, 100%, 50%)`;
-                ctx.beginPath(); ctx.arc(25, -52, 4, 0, Math.PI * 2); ctx.fill();
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = ctx.fillStyle;
+                ctx.beginPath(); ctx.arc(28, -55, 4, 0, Math.PI * 2); ctx.fill();
+                ctx.shadowBlur = 0;
             }
             ctx.restore();
 
@@ -1100,6 +1419,26 @@ export const DiabetesViz = () => {
 
             // Couch Armrest (Right - Foreground)
             ctx.fillStyle = '#800000'; ctx.beginPath(); ctx.roundRect(cx + 125, cy + 20, 15, 45, 8); ctx.fill();
+
+            // Scene lighting: TV spill, floor shadows, and slight vignette.
+            const tvSpill = ctx.createRadialGradient(tvX + tvW / 2, tvY + tvH / 2, 10, tvX + tvW / 2, tvY + tvH / 2, w * 0.55);
+            tvSpill.addColorStop(0, 'rgba(75, 168, 255, 0.18)');
+            tvSpill.addColorStop(0.45, 'rgba(75, 168, 255, 0.05)');
+            tvSpill.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = tvSpill;
+            ctx.fillRect(0, 0, w, h);
+
+            const floorShadow = ctx.createRadialGradient(cx + 50, cy + 58, 8, cx + 50, cy + 58, 105);
+            floorShadow.addColorStop(0, 'rgba(0, 0, 0, 0.28)');
+            floorShadow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = floorShadow;
+            ctx.fillRect(0, h - floorH, w, floorH);
+
+            const roomVignette = ctx.createRadialGradient(w * 0.5, h * 0.45, w * 0.18, w * 0.5, h * 0.5, w * 0.72);
+            roomVignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
+            roomVignette.addColorStop(1, 'rgba(0, 0, 0, 0.28)');
+            ctx.fillStyle = roomVignette;
+            ctx.fillRect(0, 0, w, h);
 
             // --- UI ---
             const uiX = w - 110; const uiY = 30;
