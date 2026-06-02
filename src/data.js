@@ -285,7 +285,7 @@ export const portfolioData = {
       tech: ["PostgreSQL", "MealDB API", "Groq AI", "Open Food Facts API", "React"],
       image: "https://via.placeholder.com/600x400?text=Recipe+Mixer",
       liveUrl: "#",
-      repoUrl: "private",
+      repoUrl: "https://github.com/Gaurav-Sharma-007/Recipe-Mixer-and-Dietician-AI",
       stats: [
         { label: "Data APIs", value: 2, suffix: "", prefix: "" },
         { label: "AI Assist", value: 1, suffix: "x", prefix: "" }
