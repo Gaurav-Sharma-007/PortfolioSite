@@ -1,452 +1,475 @@
 import React, { useEffect, useRef } from 'react';
-import { useTheme } from './ThemeContext';
 
 const RockBackground = () => {
-  const canvasRef = useRef(null);
-  const { theme } = useTheme();
-  const themeRef = useRef(theme);
+    const canvasRef = useRef(null);
 
-  useEffect(() => {
-    themeRef.current = theme;
-  }, [theme]);
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    let width, height;
-    let mouseX = -1000, mouseY = -1000;
+        let W = canvas.width = window.innerWidth;
+        let H = canvas.height = window.innerHeight;
+        const TAU = Math.PI * 2;
 
-    const resize = () => {
-      width = window.innerWidth;
-      height = document.documentElement.scrollHeight || window.innerHeight;
-      const dpr = window.devicePixelRatio || 1;
-      
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
+        const resize = () => {
+            W = canvas.width = window.innerWidth;
+            H = canvas.height = window.innerHeight;
+        };
+        window.addEventListener('resize', resize);
 
-      ctx.resetTransform();
-      ctx.scale(dpr, dpr);
-    };
+        // ─── DRAW: GUITAR ────────────────────────────────────────────────────
+        function drawGuitar(x, y, r, rotation, alpha) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation);
+            ctx.globalAlpha = alpha;
+            const s = r / 22;
 
-    window.addEventListener('resize', resize);
-    resize();
+            ctx.shadowColor = '#e85d04';
+            ctx.shadowBlur = 24 * s;
 
-    // Recalculate on scroll (for dynamic content)
-    const resizeObserver = new ResizeObserver(() => resize());
-    resizeObserver.observe(document.body);
+            // Lower bout
+            ctx.beginPath();
+            ctx.ellipse(0, 8 * s, 14 * s, 17 * s, 0, 0, TAU);
+            let g = ctx.createRadialGradient(-4 * s, 0, 2 * s, 0, 8 * s, 18 * s);
+            g.addColorStop(0, '#f48c06');
+            g.addColorStop(0.5, '#e85d04');
+            g.addColorStop(1, '#5a1a00');
+            ctx.fillStyle = g;
+            ctx.fill();
+            ctx.strokeStyle = '#ff6b1a';
+            ctx.lineWidth = s * 0.8;
+            ctx.stroke();
 
-    // Mouse tracking
-    const handleMouseMove = (e) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY + window.scrollY;
-    };
-    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+            // Upper bout
+            ctx.beginPath();
+            ctx.ellipse(0, -8 * s, 10 * s, 12 * s, 0, 0, TAU);
+            g = ctx.createRadialGradient(-3 * s, -12 * s, 1 * s, 0, -8 * s, 13 * s);
+            g.addColorStop(0, '#f48c06');
+            g.addColorStop(1, '#7a2700');
+            ctx.fillStyle = g;
+            ctx.fill();
+            ctx.strokeStyle = '#ff6b1a';
+            ctx.lineWidth = s * 0.6;
+            ctx.stroke();
 
-    // --- Instrument SVG Paths (Centered on a 24x24 grid) ---
-    const guitarPath = new Path2D("M10 2L10 8L7 8L5 10L5 15Q5 19 9 20Q13 21 15 19Q17 17 17 13L17 10L15 8L12 8L12 2Z");
-    const drumPath = new Path2D("M4 8C4 6 8 4 12 4C16 4 20 6 20 8L20 16C20 18 16 20 12 20C8 20 4 18 4 16ZM4 8C4 10 8 12 12 12C16 12 20 10 20 8");
-    const saxPath = new Path2D("M16 2L14 4L12 8L10 12L8 14Q6 16 6 18Q6 21 9 21Q12 21 12 18L14 14L16 10L18 6L20 4Z");
-    const pianoPath = new Path2D("M3 6L3 18L21 18L21 6ZM7 6L7 14L9 14L9 6ZM11 6L11 14L13 14L13 6ZM17 6L17 14L19 14L19 6Z");
-    const violinPath = new Path2D("M12 1L12 5L10 7Q8 9 8 12Q8 15 10 17L12 19L12 23L14 23L14 19L16 17Q18 15 18 12Q18 9 16 7L14 5L14 1Z");
-    const trumpetPath = new Path2D("M2 10L2 14L8 14L10 16L12 16L12 8L10 8L8 10ZM12 10L20 10L20 14L12 14ZM20 8L22 8L22 16L20 16Z");
+            // Waist
+            ctx.beginPath();
+            ctx.arc(0, 0, 3 * s, 0, TAU);
+            ctx.fillStyle = 'rgba(255,180,80,0.4)';
+            ctx.fill();
 
-    const instrumentPaths = [guitarPath, drumPath, saxPath, pianoPath, violinPath, trumpetPath];
+            // Sound hole
+            ctx.beginPath();
+            ctx.arc(0, 8 * s, 4.5 * s, 0, TAU);
+            ctx.fillStyle = '#1a0800';
+            ctx.fill();
+            ctx.strokeStyle = '#ff8c00';
+            ctx.lineWidth = s * 0.5;
+            ctx.stroke();
 
-    // Music note characters
-    const noteChars = ['♪', '♫', '♩', '♬', '𝅗𝅥'];
+            ctx.shadowBlur = 0;
 
-    // --- Particles & Instruments Setup ---
-    const NUM_INSTRUMENTS = Math.min(30, Math.floor(width / 50));
-    const instruments = [];
-    const musicNotes = [];
-    const dustParticles = [];
+            // Neck
+            ctx.beginPath();
+            ctx.rect(-2.5 * s, -48 * s, 5 * s, 40 * s);
+            g = ctx.createLinearGradient(-3 * s, 0, 3 * s, 0);
+            g.addColorStop(0, '#4a2c00');
+            g.addColorStop(0.3, '#8B5A2B');
+            g.addColorStop(0.7, '#6B3F1A');
+            g.addColorStop(1, '#2a1500');
+            ctx.fillStyle = g;
+            ctx.fill();
 
-    // Colors for instruments (more vibrant highlights)
-    const instrumentColors = [
-      { stroke: '#c084fc', fill: 'rgba(168, 85, 247, 0.25)' }, // Purple glow
-      { stroke: '#f472b6', fill: 'rgba(236, 72, 153, 0.25)' }, // Pink glow
-      { stroke: '#fbbf24', fill: 'rgba(245, 158, 11, 0.25)' },  // Amber glow
-      { stroke: '#34d399', fill: 'rgba(52, 211, 153, 0.25)' },  // Green glow
-      { stroke: '#60a5fa', fill: 'rgba(96, 165, 250, 0.25)' },  // Blue glow
-      { stroke: '#fda4af', fill: 'rgba(251, 113, 133, 0.25)' }, // Rose glow
-    ];
-
-    // Initialize instruments (larger sizes)
-    for (let i = 0; i < NUM_INSTRUMENTS; i++) {
-      const typeIdx = Math.floor(Math.random() * instrumentPaths.length);
-      const colorIdx = Math.floor(Math.random() * instrumentColors.length);
-      instruments.push({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.7,
-        vy: (Math.random() - 0.5) * 0.5,
-        rotation: Math.random() * Math.PI * 2,
-        rotSpeed: (Math.random() - 0.5) * 0.008,
-        size: Math.random() * 2.0 + 2.2, // scale factor: 2.2 to 4.2 -> ~53px to 100px size
-        type: typeIdx,
-        color: instrumentColors[colorIdx],
-        pulse: Math.random() * Math.PI * 2,
-        radius: 12, // Base radius matching center alignment
-      });
-    }
-
-    // Initialize dust particles
-    const NUM_DUST = 60;
-    for (let i = 0; i < NUM_DUST; i++) {
-      dustParticles.push({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        size: Math.random() * 2 + 0.5,
-        speed: Math.random() * 0.25 + 0.05,
-        alpha: Math.random() * 0.3 + 0.05,
-        drift: (Math.random() - 0.5) * 0.15,
-      });
-    }
-
-    // --- Collision Detection & Music Note Emission ---
-    const checkCollisions = () => {
-      for (let i = 0; i < instruments.length; i++) {
-        for (let j = i + 1; j < instruments.length; j++) {
-          const a = instruments[i];
-          const b = instruments[j];
-          const dx = b.x - a.x;
-          const dy = b.y - a.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-
-          const scaleA = a.size + Math.sin(a.pulse) * 0.08;
-          const scaleB = b.size + Math.sin(b.pulse) * 0.08;
-          const minDist = (a.radius * scaleA) + (b.radius * scaleB);
-
-          if (dist < minDist && dist > 0) {
-            // Elastic bounce
-            const nx = dx / dist;
-            const ny = dy / dist;
-            const relVx = a.vx - b.vx;
-            const relVy = a.vy - b.vy;
-            const relVel = relVx * nx + relVy * ny;
-
-            if (relVel > 0) {
-              const m1 = scaleA * scaleA;
-              const m2 = scaleB * scaleB;
-              const impulse = (2 * relVel) / (m1 + m2);
-
-              a.vx -= impulse * nx * m2;
-              a.vy -= impulse * ny * m2;
-              b.vx += impulse * nx * m1;
-              b.vy += impulse * ny * m1;
-
-              // Separate overlapping instruments
-              const overlap = minDist - dist;
-              a.x -= nx * overlap * 0.5;
-              a.y -= ny * overlap * 0.5;
-              b.x += nx * overlap * 0.5;
-              b.y += ny * overlap * 0.5;
-
-              // Emit music notes at collision point
-              const collisionX = (a.x + b.x) / 2;
-              const collisionY = (a.y + b.y) / 2;
-              const numNotes = Math.floor(Math.random() * 2) + 2;
-
-              for (let n = 0; n < numNotes; n++) {
-                const angle = (Math.PI * 2 / numNotes) * n + Math.random() * 0.5;
-                const speed = Math.random() * 1.2 + 0.6;
-                const noteColor = Math.random() > 0.5 ? a.color.stroke : b.color.stroke;
-                musicNotes.push({
-                  x: collisionX,
-                  y: collisionY,
-                  vx: Math.cos(angle) * speed,
-                  vy: -Math.abs(Math.sin(angle) * speed) - 0.4,
-                  char: noteChars[Math.floor(Math.random() * noteChars.length)],
-                  life: 1.0,
-                  decay: 0.007 + Math.random() * 0.007,
-                  size: Math.random() * 12 + 14,
-                  color: noteColor,
-                  rotation: Math.random() * Math.PI * 2,
-                  rotSpeed: (Math.random() - 0.5) * 0.04,
-                  wiggle: Math.random() * Math.PI * 2,
-                  wiggleSpeed: Math.random() * 0.08 + 0.04,
-                  wiggleAmp: Math.random() * 0.4 + 0.2,
-                });
-              }
+            // Frets
+            for (let i = 1; i <= 5; i++) {
+                ctx.beginPath();
+                ctx.moveTo(-2.5 * s, -48 * s + i * 7 * s);
+                ctx.lineTo(2.5 * s, -48 * s + i * 7 * s);
+                ctx.strokeStyle = 'rgba(255,220,100,0.7)';
+                ctx.lineWidth = s * 0.4;
+                ctx.stroke();
             }
-          }
-        }
-      }
-    };
 
-    // --- Render Loop ---
-    let animationFrameId;
-    let lastTime = performance.now();
+            // Strings
+            ['#ffffffcc', '#ffd60acc', '#ffe08acc'].forEach((c, i) => {
+                ctx.beginPath();
+                ctx.moveTo((i - 1) * 1.2 * s, -48 * s);
+                ctx.lineTo((i - 1) * 1.2 * s, 10 * s);
+                ctx.strokeStyle = c;
+                ctx.lineWidth = s * 0.3;
+                ctx.stroke();
+            });
 
-    const render = (currentTime) => {
-      const delta = Math.min((currentTime - lastTime) / 16.67, 3);
-      lastTime = currentTime;
+            // Headstock
+            ctx.beginPath();
+            ctx.roundRect(-4 * s, -54 * s, 8 * s, 8 * s, 2 * s);
+            ctx.fillStyle = '#3a1a00';
+            ctx.fill();
+            ctx.strokeStyle = '#ff8c00';
+            ctx.lineWidth = s * 0.4;
+            ctx.stroke();
 
-      ctx.clearRect(0, 0, width, height);
-
-      const isDark = themeRef.current === 'dark';
-
-      // Background gradient
-      const gradient = ctx.createLinearGradient(0, 0, 0, height);
-      if (isDark) {
-        gradient.addColorStop(0, '#0a0a1a');
-        gradient.addColorStop(0.3, '#100525');
-        gradient.addColorStop(0.7, '#070715');
-        gradient.addColorStop(1, '#030308');
-      } else {
-        gradient.addColorStop(0, '#f3edfe');
-        gradient.addColorStop(0.3, '#faf7f2');
-        gradient.addColorStop(0.7, '#eeebf8');
-        gradient.addColorStop(1, '#e9e4f2');
-      }
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, width, height);
-
-      // Draw dust particles
-      dustParticles.forEach(p => {
-        p.y -= p.speed * delta;
-        p.x += p.drift * delta;
-        if (p.y < -10) { p.y = height + 10; p.x = Math.random() * width; }
-        if (p.x < -10) p.x = width + 10;
-        if (p.x > width + 10) p.x = -10;
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = isDark
-          ? `rgba(192, 132, 252, ${p.alpha * 0.45})`
-          : `rgba(124, 58, 237, ${p.alpha * 0.25})`;
-        ctx.fill();
-      });
-
-      // Update & draw instruments
-      const scrollY = window.scrollY;
-
-      instruments.forEach(inst => {
-        // Mouse repulsion
-        const dmx = inst.x - mouseX;
-        const dmy = inst.y - mouseY;
-        const mouseDist = Math.sqrt(dmx * dmx + dmy * dmy);
-        if (mouseDist < 160 && mouseDist > 0) {
-          const force = (160 - mouseDist) / 160 * 0.22;
-          inst.vx += (dmx / mouseDist) * force;
-          inst.vy += (dmy / mouseDist) * force;
+            ctx.restore();
         }
 
-        // Apply physics
-        inst.x += inst.vx * delta;
-        inst.y += inst.vy * delta;
-        inst.vx *= 0.99;
-        inst.vy *= 0.99;
-        inst.rotation += inst.rotSpeed * delta;
-        inst.pulse += 0.02 * delta;
+        // ─── DRAW: DRUM ──────────────────────────────────────────────────────
+        function drawDrum(x, y, r, rotation, alpha) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation);
+            ctx.globalAlpha = alpha;
+            const s = r / 22;
+            const rx = 18 * s;
+            const shellH = 22 * s;
 
-        const scale = inst.size + Math.sin(inst.pulse) * 0.08;
-        const rad = inst.radius * scale;
+            ctx.shadowColor = '#c77dff';
+            ctx.shadowBlur = 28 * s;
 
-        // Bounce off walls (replaces wrap-around)
-        if (inst.x < rad) {
-          inst.x = rad;
-          inst.vx = Math.abs(inst.vx);
-        } else if (inst.x > width - rad) {
-          inst.x = width - rad;
-          inst.vx = -Math.abs(inst.vx);
+            // Top drumhead
+            ctx.beginPath();
+            ctx.ellipse(0, 0, rx, 7 * s, 0, 0, TAU);
+            let g = ctx.createRadialGradient(0, 0, 2 * s, 0, 0, rx);
+            g.addColorStop(0, '#e8c8ff');
+            g.addColorStop(0.4, '#9b4dca');
+            g.addColorStop(1, '#3a005e');
+            ctx.fillStyle = g;
+            ctx.fill();
+            ctx.strokeStyle = '#d0a0ff';
+            ctx.lineWidth = s;
+            ctx.stroke();
+
+            // Shell sides
+            ctx.beginPath();
+            ctx.moveTo(-rx, 0);
+            ctx.lineTo(-rx, shellH);
+            ctx.ellipse(0, shellH, rx, 6 * s, 0, Math.PI, 0);
+            ctx.lineTo(rx, 0);
+            g = ctx.createLinearGradient(-rx, 0, rx, 0);
+            g.addColorStop(0, '#2d0050');
+            g.addColorStop(0.2, '#7b2d8b');
+            g.addColorStop(0.5, '#c77dff');
+            g.addColorStop(0.8, '#7b2d8b');
+            g.addColorStop(1, '#2d0050');
+            ctx.fillStyle = g;
+            ctx.fill();
+            ctx.strokeStyle = '#c77dff';
+            ctx.lineWidth = s * 0.6;
+            ctx.stroke();
+
+            // Bottom rim
+            ctx.beginPath();
+            ctx.ellipse(0, shellH, rx, 6 * s, 0, 0, TAU);
+            ctx.fillStyle = '#1a0030';
+            ctx.fill();
+            ctx.strokeStyle = '#a060f0';
+            ctx.lineWidth = s * 0.5;
+            ctx.stroke();
+
+            // Tension rods
+            for (let i = 0; i < 6; i++) {
+                const angle = (i / 6) * TAU;
+                const bx = Math.cos(angle) * (rx - 2 * s);
+                ctx.beginPath();
+                ctx.moveTo(bx, -5 * s);
+                ctx.lineTo(bx, shellH + 3 * s);
+                ctx.strokeStyle = '#d0a0ff88';
+                ctx.lineWidth = s * 0.4;
+                ctx.stroke();
+            }
+
+            // Top rim highlight
+            ctx.beginPath();
+            ctx.ellipse(0, 0, rx, 7 * s, 0, 0, TAU);
+            ctx.strokeStyle = '#ffffff88';
+            ctx.lineWidth = s * 0.6;
+            ctx.stroke();
+
+            ctx.restore();
         }
 
-        if (inst.y < rad) {
-          inst.y = rad;
-          inst.vy = Math.abs(inst.vy);
-        } else if (inst.y > height - rad) {
-          inst.y = height - rad;
-          inst.vy = -Math.abs(inst.vy);
+        // ─── DRAW: MUSIC NOTE ────────────────────────────────────────────────
+        function drawNote(x, y, size, rotation, color, alpha) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation);
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = color;
+            ctx.strokeStyle = color;
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 8;
+            const s = size;
+
+            ctx.beginPath();
+            ctx.ellipse(-s * 0.3, 0, s * 0.7, s * 0.5, -0.4, 0, TAU);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.moveTo(s * 0.35, 0);
+            ctx.lineTo(s * 0.35, -s * 2.2);
+            ctx.lineWidth = s * 0.18;
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(s * 0.35, -s * 2.2);
+            ctx.bezierCurveTo(s * 1.2, -s * 1.9, s * 1.4, -s * 1.2, s * 0.6, -s * 0.8);
+            ctx.lineWidth = s * 0.18;
+            ctx.stroke();
+
+            ctx.restore();
         }
 
-        // Viewport culling
-        const viewTop = scrollY - 120;
-        const viewBottom = scrollY + window.innerHeight + 120;
-        if (inst.y < viewTop || inst.y > viewBottom) return;
+        // ─── PARTICLE SPAWNERS ───────────────────────────────────────────────
+        const noteColors = ['#00f5d4', '#fee440', '#f15bb5', '#9b5de5'];
 
-        ctx.save();
-        ctx.translate(inst.x, inst.y);
-        ctx.rotate(inst.rotation);
-        ctx.scale(scale, scale);
-        ctx.translate(-12, -12); // Center path rotation
-
-        // 3D Shadows
-        ctx.shadowColor = inst.color.stroke;
-        ctx.shadowBlur = 12 + Math.sin(inst.pulse) * 4;
-        ctx.shadowOffsetX = 3;
-        ctx.shadowOffsetY = 3;
-
-        // Base semi-transparent body
-        ctx.fillStyle = isDark 
-          ? inst.color.fill.replace('0.25', '0.35') 
-          : inst.color.fill.replace('0.25', '0.22');
-        ctx.fill(instrumentPaths[inst.type]);
-
-        // Lighting/Highlight Gradient
-        const highlightGrad = ctx.createLinearGradient(0, 0, 24, 24);
-        highlightGrad.addColorStop(0, isDark ? 'rgba(255, 255, 255, 0.45)' : 'rgba(255, 255, 255, 0.65)');
-        highlightGrad.addColorStop(0.4, 'rgba(255, 255, 255, 0)');
-        highlightGrad.addColorStop(1, isDark ? 'rgba(0, 0, 0, 0.5)' : 'rgba(0, 0, 0, 0.2)');
-        ctx.fillStyle = highlightGrad;
-        ctx.fill(instrumentPaths[inst.type]);
-
-        // Gloss Outline
-        ctx.strokeStyle = inst.color.stroke;
-        ctx.lineWidth = 1.35;
-        ctx.globalAlpha = isDark ? 0.85 : 0.7;
-        ctx.stroke(instrumentPaths[inst.type]);
-
-        // --- High-Fidelity Internal Details ---
-        ctx.shadowColor = 'transparent';
-        ctx.shadowBlur = 0;
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 0;
-        ctx.globalAlpha = isDark ? 0.75 : 0.6;
-        ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.45)' : 'rgba(0, 0, 0, 0.35)';
-        ctx.lineWidth = 0.8;
-
-        if (inst.type === 0) { // Guitar
-          // Soundhole
-          ctx.beginPath();
-          ctx.arc(11, 15, 2.0, 0, Math.PI * 2);
-          ctx.fillStyle = isDark ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.5)';
-          ctx.fill();
-          ctx.stroke();
-
-          // Strings
-          ctx.beginPath();
-          ctx.moveTo(11, 2);  ctx.lineTo(11, 15);
-          ctx.moveTo(10.2, 2); ctx.lineTo(10.2, 15);
-          ctx.moveTo(11.8, 2); ctx.lineTo(11.8, 15);
-          ctx.stroke();
-        } else if (inst.type === 1) { // Drum
-          // Head rim Highlight
-          ctx.beginPath();
-          ctx.ellipse(12, 8, 8, 3.8, 0, 0, Math.PI * 2);
-          ctx.fillStyle = isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.45)';
-          ctx.fill();
-          ctx.stroke();
-          
-          // Tension rods
-          ctx.beginPath();
-          ctx.moveTo(6, 10);  ctx.lineTo(6, 17);
-          ctx.moveTo(10, 12); ctx.lineTo(10, 19);
-          ctx.moveTo(14, 12); ctx.lineTo(14, 19);
-          ctx.moveTo(18, 10); ctx.lineTo(18, 17);
-          ctx.stroke();
-        } else if (inst.type === 2) { // Saxophone
-          // Keys
-          ctx.fillStyle = inst.color.stroke;
-          ctx.beginPath();
-          ctx.arc(13, 10, 0.8, 0, Math.PI * 2);
-          ctx.arc(11.2, 12.8, 0.8, 0, Math.PI * 2);
-          ctx.arc(9.5, 14.8, 0.8, 0, Math.PI * 2);
-          ctx.fill();
-          
-          // Bell flare
-          ctx.beginPath();
-          ctx.arc(9, 20.5, 1.5, 0, Math.PI * 2);
-          ctx.stroke();
-        } else if (inst.type === 3) { // Piano keys
-          // Key Separators
-          ctx.beginPath();
-          ctx.moveTo(6.5, 12); ctx.lineTo(6.5, 18);
-          ctx.moveTo(10.5, 12); ctx.lineTo(10.5, 18);
-          ctx.moveTo(14.5, 12); ctx.lineTo(14.5, 18);
-          ctx.moveTo(18.5, 12); ctx.lineTo(18.5, 18);
-          ctx.stroke();
-        } else if (inst.type === 4) { // Violin
-          // Strings
-          ctx.beginPath();
-          ctx.moveTo(11.5, 4); ctx.lineTo(11.5, 18);
-          ctx.moveTo(12.5, 4); ctx.lineTo(12.5, 18);
-          ctx.stroke();
-          
-          // f-holes
-          ctx.beginPath();
-          ctx.moveTo(9, 9);  ctx.quadraticCurveTo(8.5, 12, 9.5, 14);
-          ctx.moveTo(15, 9); ctx.quadraticCurveTo(15.5, 12, 14.5, 14);
-          ctx.stroke();
-        } else if (inst.type === 5) { // Trumpet
-          // Valves
-          ctx.beginPath();
-          ctx.moveTo(13.5, 10); ctx.lineTo(13.5, 7.5);
-          ctx.moveTo(15.5, 10); ctx.lineTo(15.5, 7.5);
-          ctx.moveTo(17.5, 10); ctx.lineTo(17.5, 7.5);
-          ctx.stroke();
+        function spawnCollisionNotes(x, y) {
+            const count = 6 + Math.floor(Math.random() * 7);
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * TAU;
+                const speed = 2 + Math.random() * 5.5;
+                noteParticles.push({
+                    x, y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    size: 9 + Math.random() * 16,
+                    rotation: Math.random() * TAU,
+                    rotSpeed: (Math.random() - 0.5) * 0.22,
+                    color: noteColors[Math.floor(Math.random() * 4)],
+                    life: 1,
+                    decay: 0.011 + Math.random() * 0.018,
+                    gravity: -0.04 - Math.random() * 0.04,
+                    isCollision: true
+                });
+            }
         }
 
-        ctx.restore();
-      });
-
-      // Check collisions
-      checkCollisions();
-
-      // Update & draw music notes
-      for (let i = musicNotes.length - 1; i >= 0; i--) {
-        const note = musicNotes[i];
-        note.wiggle += note.wiggleSpeed * delta;
-        note.x += (note.vx + Math.sin(note.wiggle) * note.wiggleAmp) * delta;
-        note.y += note.vy * delta;
-        note.rotation += note.rotSpeed * delta;
-        note.life -= note.decay * delta;
-        note.vy *= 0.99;
-
-        if (note.life <= 0) {
-          musicNotes.splice(i, 1);
-          continue;
+        function spawnSparks(x, y) {
+            for (let i = 0; i < 22; i++) {
+                const angle = Math.random() * TAU;
+                const speed = 3 + Math.random() * 9;
+                sparks.push({
+                    x, y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    color: Math.random() > 0.5 ? '#ffffff' : '#ffd60a',
+                    life: 1,
+                    decay: 0.022 + Math.random() * 0.04
+                });
+            }
         }
 
-        // Viewport culling
-        const viewTop = scrollY - 50;
-        const viewBottom = scrollY + window.innerHeight + 50;
-        if (note.y < viewTop || note.y > viewBottom) continue;
+        // ─── INIT ─────────────────────────────────────────────────────────────
+        const instruments = [];
+        const noteParticles = [];
+        const sparks = [];
 
-        ctx.save();
-        ctx.translate(note.x, note.y);
-        ctx.rotate(note.rotation);
-        ctx.globalAlpha = note.life * (isDark ? 0.85 : 0.65);
-        ctx.fillStyle = note.color;
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = note.color;
-        ctx.font = `${note.size * note.life}px serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(note.char, 0, 0);
-        ctx.restore();
-      }
+        const instrumentTypes = ['guitar', 'guitar', 'guitar', 'drum', 'drum'];
+        for (let i = 0; i < 9; i++) {
+            const m = 80;
+            instruments.push({
+                type: instrumentTypes[i % instrumentTypes.length],
+                x: m + Math.random() * (W - m * 2),
+                y: m + Math.random() * (H - m * 2),
+                r: 52 + Math.random() * 50,
+                vx: (Math.random() - 0.5) * 1.8,
+                vy: (Math.random() - 0.5) * 1.8,
+                rotation: Math.random() * TAU,
+                rotSpeed: (Math.random() - 0.5) * 0.012,
+                pulse: Math.random() * TAU,
+                alpha: 0.75 + Math.random() * 0.25
+            });
+        }
 
-      animationFrameId = requestAnimationFrame(render);
-    };
+        // Background stars
+        const bgStars = Array.from({ length: 200 }, () => ({
+            x: Math.random() * W,
+            y: Math.random() * H,
+            r: Math.random() * 1.6,
+            twinkle: Math.random() * TAU,
+            speed: 0.02 + Math.random() * 0.04
+        }));
 
-    animationFrameId = requestAnimationFrame(render);
+        let tick = 0;
+        let animId;
 
-    return () => {
-      window.removeEventListener('resize', resize);
-      window.removeEventListener('mousemove', handleMouseMove);
-      resizeObserver.disconnect();
-      cancelAnimationFrame(animationFrameId);
-    };
-  }, []);
+        // ─── BACKGROUND DRAW ─────────────────────────────────────────────────
+        function drawBackground() {
+            const bg = ctx.createLinearGradient(0, 0, 0, H);
+            bg.addColorStop(0, '#000008');
+            bg.addColorStop(0.5, '#080012');
+            bg.addColorStop(1, '#020008');
+            ctx.fillStyle = bg;
+            ctx.fillRect(0, 0, W, H);
 
-  return (
-    <canvas
-      ref={canvasRef}
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        zIndex: 0,
-        pointerEvents: 'none',
-      }}
-    />
-  );
+            bgStars.forEach(s => {
+                s.twinkle += s.speed;
+                const a = 0.3 + 0.5 * Math.abs(Math.sin(s.twinkle));
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.r, 0, TAU);
+                ctx.fillStyle = `rgba(255,255,255,${a.toFixed(2)})`;
+                ctx.fill();
+            });
+
+            // Stage light beams
+            [
+                { x: W * 0.15, color: 'rgba(232,93,4,' },
+                { x: W * 0.5,  color: 'rgba(120,40,200,' },
+                { x: W * 0.82, color: 'rgba(0,180,200,' },
+            ].forEach(b => {
+                const bGrad = ctx.createLinearGradient(b.x, 0, b.x + 80, H * 0.8);
+                bGrad.addColorStop(0, b.color + '0.13)');
+                bGrad.addColorStop(1, b.color + '0)');
+                ctx.beginPath();
+                ctx.moveTo(b.x - 5, 0);
+                ctx.lineTo(b.x + 160, H * 0.8);
+                ctx.lineTo(b.x + 80, H * 0.8);
+                ctx.lineTo(b.x + 5, 0);
+                ctx.fillStyle = bGrad;
+                ctx.fill();
+            });
+        }
+
+        // ─── MAIN LOOP ───────────────────────────────────────────────────────
+        function loop() {
+            ctx.clearRect(0, 0, W, H);
+            drawBackground();
+            tick++;
+
+            // Move & wall-bounce instruments
+            instruments.forEach(inst => {
+                inst.x += inst.vx;
+                inst.y += inst.vy;
+                inst.rotation += inst.rotSpeed;
+                inst.pulse += 0.04;
+
+                if (inst.x < inst.r)     { inst.x = inst.r;     inst.vx = Math.abs(inst.vx) * 0.95; }
+                if (inst.x > W - inst.r) { inst.x = W - inst.r; inst.vx = -Math.abs(inst.vx) * 0.95; }
+                if (inst.y < inst.r)     { inst.y = inst.r;     inst.vy = Math.abs(inst.vy) * 0.95; }
+                if (inst.y > H - inst.r) { inst.y = H - inst.r; inst.vy = -Math.abs(inst.vy) * 0.95; }
+            });
+
+            // Collision detection & response
+            for (let i = 0; i < instruments.length; i++) {
+                for (let j = i + 1; j < instruments.length; j++) {
+                    const a = instruments[i], b = instruments[j];
+                    const dx = b.x - a.x, dy = b.y - a.y;
+                    const d = Math.sqrt(dx * dx + dy * dy);
+                    const minD = a.r + b.r - 10;
+                    if (d < minD && d > 0) {
+                        const nx = dx / d, ny = dy / d;
+                        const relV = (a.vx - b.vx) * nx + (a.vy - b.vy) * ny;
+                        if (relV > 0) {
+                            const impulse = relV * 1.1;
+                            a.vx -= impulse * nx; a.vy -= impulse * ny;
+                            b.vx += impulse * nx; b.vy += impulse * ny;
+                            const overlap = minD - d;
+                            a.x -= nx * overlap * 0.5; a.y -= ny * overlap * 0.5;
+                            b.x += nx * overlap * 0.5; b.y += ny * overlap * 0.5;
+                            const mx = (a.x + b.x) * 0.5, my = (a.y + b.y) * 0.5;
+                            spawnCollisionNotes(mx, my);
+                            spawnSparks(mx, my);
+                        }
+                    }
+                }
+            }
+
+            // Draw instruments with glow halos
+            instruments.forEach(inst => {
+                const pulse = 1 + Math.sin(inst.pulse) * 0.06;
+                const drawR = inst.r * pulse;
+                const isGuitar = inst.type === 'guitar';
+
+                ctx.save();
+                ctx.globalAlpha = 0.13;
+                ctx.beginPath();
+                ctx.arc(inst.x, inst.y, drawR * 0.9, 0, TAU);
+                ctx.fillStyle = isGuitar ? '#e85d04' : '#7b2d8b';
+                ctx.shadowColor = isGuitar ? '#e85d04' : '#c77dff';
+                ctx.shadowBlur = 50;
+                ctx.fill();
+                ctx.restore();
+
+                if (isGuitar) drawGuitar(inst.x, inst.y, drawR, inst.rotation, inst.alpha);
+                else drawDrum(inst.x, inst.y, drawR, inst.rotation, inst.alpha);
+            });
+
+            // Update & draw collision note particles
+            for (let i = noteParticles.length - 1; i >= 0; i--) {
+                const n = noteParticles[i];
+                n.x += n.vx; n.y += n.vy;
+                n.vy += n.gravity;
+                n.vx *= 0.97;
+                n.rotation += n.rotSpeed;
+                n.life -= n.decay;
+                if (n.life <= 0) { noteParticles.splice(i, 1); continue; }
+                const scaleFactor = n.life > 0.7 ? (1 - n.life) * 3.3 : n.life * 1.3;
+                drawNote(n.x, n.y, n.size * Math.min(1, scaleFactor + 0.3), n.rotation, n.color, Math.max(0, n.life));
+            }
+
+            // Update & draw spark streaks
+            for (let i = sparks.length - 1; i >= 0; i--) {
+                const s = sparks[i];
+                s.x += s.vx; s.y += s.vy;
+                s.vx *= 0.93; s.vy *= 0.93;
+                s.vy += 0.06;
+                s.life -= s.decay;
+                if (s.life <= 0) { sparks.splice(i, 1); continue; }
+                ctx.save();
+                ctx.globalAlpha = s.life * s.life;
+                ctx.strokeStyle = s.color;
+                ctx.shadowColor = s.color;
+                ctx.shadowBlur = 6;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(s.x, s.y);
+                ctx.lineTo(s.x - s.vx * 7, s.y - s.vy * 7);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // Ambient floating notes (rise from bottom)
+            if (tick % 90 === 0) {
+                for (let i = 0; i < 3; i++) {
+                    noteParticles.push({
+                        x: Math.random() * W,
+                        y: H + 20,
+                        vx: (Math.random() - 0.5) * 0.6,
+                        vy: -(0.6 + Math.random() * 0.8),
+                        size: 18 + Math.random() * 24,
+                        rotation: Math.random() * TAU,
+                        rotSpeed: (Math.random() - 0.5) * 0.008,
+                        color: noteColors[Math.floor(Math.random() * 4)],
+                        life: 1,
+                        decay: 0.003 + Math.random() * 0.004,
+                        gravity: 0
+                    });
+                }
+            }
+
+            animId = requestAnimationFrame(loop);
+        }
+
+        loop();
+
+        return () => {
+            window.removeEventListener('resize', resize);
+            cancelAnimationFrame(animId);
+        };
+    }, []);
+
+    return (
+        <canvas
+            ref={canvasRef}
+            style={{
+                position: 'fixed',
+                top: 0, left: 0,
+                width: '100%', height: '100%',
+                zIndex: -1,
+                pointerEvents: 'none'
+            }}
+        />
+    );
 };
 
 export default RockBackground;
