@@ -1,37 +1,117 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useScrollAnimation } from '../hooks/useScrollAnimation';
 
-const Counter = ({ value, duration = 2000, prefix = '', suffix = '' }) => {
-    const [count, setCount] = useState(0);
-    const [ref, isVisible] = useScrollAnimation(0.5);
-    const [hasAnimated, setHasAnimated] = useState(false);
+const DIGITS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
-    useEffect(() => {
-        if (isVisible && !hasAnimated) {
-            setHasAnimated(true);
-            let start = 0;
-            const end = parseInt(value, 10);
-            if (start === end) return;
+const OdometerDigit = ({ digit, animate, delay }) => {
+  const [offset, setOffset] = useState(0);
 
-            const incrementTime = (duration / end) * 0.8; // Faster at start
-            let timer = setInterval(() => {
-                start += 1;
-                setCount(start);
-                if (start === end) clearInterval(timer);
-            }, incrementTime);
+  useEffect(() => {
+    if (animate) {
+      const timer = setTimeout(() => {
+        setOffset(digit);
+      }, delay);
+      return () => clearTimeout(timer);
+    }
+  }, [animate, digit, delay]);
 
-            // Fallback to ensure it ends exactly on value if calculation drifts
-            setTimeout(() => setCount(end), duration);
+  return (
+    <span className="odometer-digit-container">
+      <span
+        className="odometer-digit-strip"
+        style={{
+          transform: `translateY(${-offset * 100}%)`,
+          transition: `transform 1.4s cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms`,
+        }}
+      >
+        {DIGITS.map((d) => (
+          <span key={d} className="odometer-digit-cell">
+            {d}
+          </span>
+        ))}
+      </span>
+    </span>
+  );
+};
 
-            return () => clearInterval(timer);
+const Counter = ({ value, prefix = '', suffix = '' }) => {
+  const [ref, isVisible] = useScrollAnimation(0.3);
+  const [hasAnimated, setHasAnimated] = useState(false);
+
+  useEffect(() => {
+    if (isVisible && !hasAnimated) {
+      const timer = setTimeout(() => {
+        setHasAnimated(true);
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [isVisible, hasAnimated]);
+
+  const digits = useMemo(() => {
+    return String(Math.abs(parseInt(value, 10) || 0)).split('').map(Number);
+  }, [value]);
+
+  return (
+    <span ref={ref} className="odometer-counter">
+      {prefix && <span className="odometer-affix">{prefix}</span>}
+      <span className="odometer-digits-row">
+        {digits.map((d, i) => (
+          <OdometerDigit
+            key={`${i}-${digits.length}`}
+            digit={d}
+            animate={hasAnimated}
+            delay={i * 120}
+          />
+        ))}
+      </span>
+      {suffix && <span className="odometer-affix">{suffix}</span>}
+
+      <style>{`
+        .odometer-counter {
+          display: inline-flex;
+          align-items: baseline;
+          font-family: var(--font-heading);
+          font-weight: 700;
+          color: var(--text-primary);
+          text-shadow: 0 0 12px var(--accent-glow), 0 0 24px var(--accent-glow);
+          line-height: 1;
         }
-    }, [isVisible, value, duration, hasAnimated]);
 
-    return (
-        <span ref={ref} className={`counter ${isVisible ? 'visible' : ''}`}>
-            {prefix}{count}{suffix}
-        </span>
-    );
+        .odometer-affix {
+          opacity: 0.85;
+          font-size: 0.85em;
+        }
+
+        .odometer-digits-row {
+          display: inline-flex;
+          align-items: baseline;
+        }
+
+        .odometer-digit-container {
+          display: inline-block;
+          height: 1.15em;
+          overflow: hidden;
+          position: relative;
+          width: 0.65em;
+          text-align: center;
+        }
+
+        .odometer-digit-strip {
+          display: flex;
+          flex-direction: column;
+          transform: translateY(0%);
+          will-change: transform;
+        }
+
+        .odometer-digit-cell {
+          display: block;
+          height: 1.15em;
+          line-height: 1.15em;
+          text-align: center;
+        }
+      `}</style>
+    </span>
+  );
 };
 
 export default Counter;
