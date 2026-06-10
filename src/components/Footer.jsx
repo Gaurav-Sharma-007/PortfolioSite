@@ -27,8 +27,7 @@ const Footer = () => {
 
     return (
         <footer className="ft-footer" id="contact">
-            {/* Animated gradient divider */}
-            <div className="ft-divider" />
+            {/* Divider removed */}
 
             <div className="ft-content">
                 <h2
@@ -120,28 +119,7 @@ const Footer = () => {
                     );
                 }
 
-                /* Animated gradient divider */
-                .ft-divider {
-                    width: 100%;
-                    height: 2px;
-                    margin-bottom: 4rem;
-                    background: linear-gradient(
-                        90deg,
-                        transparent,
-                        var(--accent-color),
-                        var(--accent-hover),
-                        var(--accent-color),
-                        transparent
-                    );
-                    background-size: 200% 100%;
-                    animation: ft-shimmer 3s ease-in-out infinite;
-                    border-radius: 2px;
-                }
 
-                @keyframes ft-shimmer {
-                    0% { background-position: -200% 0; }
-                    100% { background-position: 200% 0; }
-                }
 
                 .ft-content {
                     max-width: 600px;

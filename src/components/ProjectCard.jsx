@@ -19,37 +19,52 @@ import {
 } from './ProjectAnimations';
 
 import Counter from './Counter';
+import { useIsInViewport, usePerformancePreferences } from '../hooks/usePerformancePreferences';
 
 const ProjectCard = ({ project }) => {
   const cardRef = useRef(null);
   const videoRef = useRef(null);
+  const tiltFrameRef = useRef(null);
+  const pendingPointerRef = useRef(null);
   const [tilt, setTilt] = useState({ rotateX: 0, rotateY: 0 });
   const [glowPos, setGlowPos] = useState({ x: 50, y: 50 });
   const [isHovering, setIsHovering] = useState(false);
+  const perfProfile = usePerformancePreferences();
+  const isNearViewport = useIsInViewport(cardRef, '400px');
+  const enableMotionEffects = !perfProfile.reducedMotion && !perfProfile.coarsePointer && !perfProfile.lowPower;
+  const shouldRenderViz = isNearViewport && !perfProfile.reducedMotion;
 
-  // Handle video hover play/pause
+  // Handle video auto-play
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    if (isHovering) {
+    // Always play if motion effects are allowed
+    if (enableMotionEffects) {
       const playPromise = video.play();
       if (playPromise !== undefined) {
         playPromise.catch(() => {});
       }
     } else {
       video.pause();
-      video.currentTime = 0;
     }
-  }, [isHovering]);
+  }, [enableMotionEffects]);
 
-  const handleMouseMove = useCallback((e) => {
+  useEffect(() => {
+    return () => {
+      if (tiltFrameRef.current) {
+        cancelAnimationFrame(tiltFrameRef.current);
+      }
+    };
+  }, []);
+
+  const updateTiltFromPointer = useCallback(({ clientX, clientY }) => {
     const card = cardRef.current;
     if (!card) return;
 
     const rect = card.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
 
@@ -63,12 +78,31 @@ const ProjectCard = ({ project }) => {
     setGlowPos({ x: glowX, y: glowY });
   }, []);
 
+  const handleMouseMove = useCallback((e) => {
+    if (!enableMotionEffects) return;
+
+    pendingPointerRef.current = { clientX: e.clientX, clientY: e.clientY };
+    if (tiltFrameRef.current) return;
+
+    tiltFrameRef.current = requestAnimationFrame(() => {
+      tiltFrameRef.current = null;
+      if (pendingPointerRef.current) {
+        updateTiltFromPointer(pendingPointerRef.current);
+      }
+    });
+  }, [enableMotionEffects, updateTiltFromPointer]);
+
   const handleMouseEnter = useCallback(() => {
     setIsHovering(true);
   }, []);
 
   const handleMouseLeave = useCallback(() => {
     setIsHovering(false);
+    pendingPointerRef.current = null;
+    if (tiltFrameRef.current) {
+      cancelAnimationFrame(tiltFrameRef.current);
+      tiltFrameRef.current = null;
+    }
     setTilt({ rotateX: 0, rotateY: 0 });
     setGlowPos({ x: 50, y: 50 });
   }, []);
@@ -105,28 +139,35 @@ const ProjectCard = ({ project }) => {
   };
 
   const cardStyle = {
-    transform: `perspective(800px) rotateX(${tilt.rotateX}deg) rotateY(${tilt.rotateY}deg) ${isHovering ? 'translateY(-8px) scale(1.02)' : 'translateY(0) scale(1)'}`,
-    transition: isHovering ? 'transform 0.1s ease-out, box-shadow 0.3s ease' : 'transform 0.4s var(--transition-bounce), box-shadow 0.4s ease',
+    transform: enableMotionEffects
+      ? `perspective(800px) rotateX(${tilt.rotateX}deg) rotateY(${tilt.rotateY}deg) ${isHovering ? 'translateY(-8px) scale(1.02)' : 'translateY(0) scale(1)'}`
+      : 'none',
+    transition: enableMotionEffects
+      ? (isHovering ? 'transform 0.1s ease-out, box-shadow 0.3s ease' : 'transform 0.4s var(--transition-bounce), box-shadow 0.4s ease')
+      : 'border-color 0.2s ease, box-shadow 0.2s ease',
   };
 
   const glowBorderStyle = {
-    background: isHovering
+    background: isHovering && enableMotionEffects
       ? `radial-gradient(circle at ${glowPos.x}% ${glowPos.y}%, var(--accent-color), var(--accent-hover), transparent 70%)`
       : 'transparent',
-    opacity: isHovering ? 1 : 0,
+    opacity: isHovering && enableMotionEffects ? 1 : 0,
   };
 
   const holoOverlayStyle = {
-    background: isHovering
+    background: isHovering && enableMotionEffects
       ? `linear-gradient(${135 + (glowPos.x - 50) * 0.5}deg, rgba(100, 108, 255, 0.15), rgba(0, 255, 200, 0.1), rgba(255, 100, 200, 0.1), transparent)`
       : 'transparent',
-    opacity: isHovering ? 1 : 0,
+    opacity: isHovering && enableMotionEffects ? 1 : 0,
   };
+
+  const previewSrc = project.image || project.posterUrl;
+  const viz = shouldRenderViz ? renderViz() : null;
 
   return (
     <div
       ref={cardRef}
-      className="pc3d-card"
+      className={`pc3d-card ${enableMotionEffects ? 'pc3d-effects-enabled' : 'pc3d-effects-light'}`}
       style={cardStyle}
       onMouseMove={handleMouseMove}
       onMouseEnter={handleMouseEnter}
@@ -142,7 +183,8 @@ const ProjectCard = ({ project }) => {
           {project.videoUrl ? (
             <>
               <div className="pc3d-viz-container">
-                {renderViz() || <img src={project.image} alt={project.title} loading="lazy" />}
+                {viz}
+                {!viz && previewSrc && <img src={previewSrc} alt={project.title} loading="lazy" />}
               </div>
               <video
                 ref={videoRef}
@@ -150,12 +192,13 @@ const ProjectCard = ({ project }) => {
                 loop
                 muted
                 playsInline
-                className={`pc3d-video ${isHovering ? 'is-playing' : ''}`}
+                className={`pc3d-video is-playing`}
               />
             </>
           ) : (
             <div className="pc3d-viz-container">
-              {renderViz() || <img src={project.image} alt={project.title} loading="lazy" />}
+              {viz}
+              {!viz && previewSrc && <img src={previewSrc} alt={project.title} loading="lazy" />}
             </div>
           )}
 
@@ -230,9 +273,12 @@ const ProjectCard = ({ project }) => {
           position: relative;
           border-radius: 16px;
           transform-style: preserve-3d;
-          will-change: transform;
           cursor: default;
           height: 100%;
+        }
+
+        .pc3d-card.pc3d-effects-enabled:hover {
+          will-change: transform;
         }
 
         .pc3d-glow-border {
@@ -249,8 +295,8 @@ const ProjectCard = ({ project }) => {
           position: relative;
           z-index: 1;
           background: var(--card-bg);
-          backdrop-filter: blur(var(--glass-blur, 16px));
-          -webkit-backdrop-filter: blur(var(--glass-blur, 16px));
+          backdrop-filter: blur(var(--glass-blur, 12px));
+          -webkit-backdrop-filter: blur(var(--glass-blur, 12px));
           border: 1px solid var(--card-border);
           border-radius: 16px;
           overflow: hidden;
@@ -281,6 +327,7 @@ const ProjectCard = ({ project }) => {
           position: absolute;
           top: 0;
           left: 0;
+          background: #050510;
         }
 
         .pc3d-viz-container img {
@@ -335,6 +382,10 @@ const ProjectCard = ({ project }) => {
           animation: pc3d-shine-sweep 0.8s ease-out forwards;
         }
 
+        .pc3d-effects-light .pc3d-shine.active {
+          animation: none;
+        }
+
         @keyframes pc3d-shine-sweep {
           0% { left: -60%; }
           100% { left: 120%; }
@@ -362,10 +413,6 @@ const ProjectCard = ({ project }) => {
           color: var(--text-secondary);
           margin-bottom: 1rem;
           line-height: 1.55;
-          display: -webkit-box;
-          -webkit-line-clamp: 3;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
         }
 
         /* Tags */
@@ -394,7 +441,6 @@ const ProjectCard = ({ project }) => {
           border-color: var(--accent-color);
           color: var(--text-primary);
           background: rgba(100, 108, 255, 0.08);
-          animation: pc3d-tag-pulse 1s ease-in-out infinite;
         }
 
         @keyframes pc3d-tag-pulse {
@@ -504,6 +550,21 @@ const ProjectCard = ({ project }) => {
 
         .pc3d-client:hover {
           opacity: 1;
+        }
+
+        @media (max-width: 768px), (prefers-reduced-motion: reduce) {
+          .pc3d-inner {
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+          }
+
+          .pc3d-card,
+          .pc3d-viz-container img,
+          .pc3d-video,
+          .pc3d-holo-overlay,
+          .pc3d-glow-border {
+            transition-duration: 0.15s;
+          }
         }
       `}</style>
     </div>

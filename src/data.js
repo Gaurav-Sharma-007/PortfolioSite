@@ -5,7 +5,7 @@
 
 export const portfolioData = {
   name: "Gaurav Sharma",
-  title: "Data Science Engineer | Python | Azure | AI/ML",
+  title: "Data AI Engineer | Python | Azure | AI/ML",
   bio: "B.Tech in Data Science with hands-on experience in AI/ML, cloud (Azure AZ-900 certified), and enterprise app development. Proven track record in building scalable LLM-RAG systems, SharePoint solutions, and Power Platform apps that improve operational efficiency.",
   email: "myspacegaurav7@gmail.com",
   location: "Indore, MP, India",

@@ -1,291 +1,255 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { useIsInViewport, usePerformancePreferences } from '../hooks/usePerformancePreferences';
 
 const ThankYouCar = () => {
+    const containerRef = useRef(null);
     const canvasRef = useRef(null);
-    const [showText, setShowText] = useState(false);
-    const [displayedText, setDisplayedText] = useState('');
-    const textTriggeredRef = useRef(false);
-
-    // Typewriter effect
-    useEffect(() => {
-        if (!showText) return;
-        const fullText = 'Thanks for visiting!';
-        let i = 0;
-        setDisplayedText('');
-        const interval = setInterval(() => {
-            i++;
-            setDisplayedText(fullText.slice(0, i));
-            if (i >= fullText.length) clearInterval(interval);
-        }, 65);
-        return () => clearInterval(interval);
-    }, [showText]);
+    const perfProfile = usePerformancePreferences();
+    const isNearViewport = useIsInViewport(containerRef, '300px');
 
     useEffect(() => {
+        if (!isNearViewport || perfProfile.reducedMotion) return;
+
         const canvas = canvasRef.current;
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
+        const maxFps = perfProfile.lowPower ? 24 : 60;
+        const frameInterval = 1000 / maxFps;
+        let lastFrame = 0;
+        let isDocumentVisible = !document.hidden;
 
         const init = () => {
             canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = 150;
+            canvas.height = 250; // Increased height to allow smoke bleeding
         };
         init();
         window.addEventListener('resize', init);
+        const handleVisibility = () => {
+            isDocumentVisible = !document.hidden;
+        };
+        document.addEventListener('visibilitychange', handleVisibility);
 
         let rocketX = -150;
         const rocketBaseY = canvas.height / 2 + 5;
         let particles = [];
         let stars = [];
-        let trail = [];
         let animationId;
         let frameCount = 0;
 
         // Generate background stars
         const generateStars = () => {
             stars = [];
-            for (let i = 0; i < 60; i++) {
+            const starCount = perfProfile.lowPower ? 30 : 60;
+            for (let i = 0; i < starCount; i++) {
                 stars.push({
                     x: Math.random() * canvas.width,
                     y: Math.random() * canvas.height,
-                    size: Math.random() * 1.8 + 0.3,
-                    twinkleSpeed: Math.random() * 0.03 + 0.01,
+                    size: Math.random() * 1.5 + 0.5,
+                    twinkleSpeed: Math.random() * 0.05 + 0.01,
                     twinkleOffset: Math.random() * Math.PI * 2,
-                    color: ['#a78bfa', '#f472b6', '#fbbf24', '#818cf8', '#c084fc'][Math.floor(Math.random() * 5)]
+                    color: ['#ffffff', '#a5b4fc', '#fbcfe8', '#fef08a'][Math.floor(Math.random() * 4)]
                 });
             }
         };
         generateStars();
 
-        const themeColors = [
-            { r: 167, g: 139, b: 250 },  // purple  #a78bfa
-            { r: 244, g: 114, b: 182 },   // pink    #f472b6
-            { r: 251, g: 191, b: 36 },    // amber   #fbbf24
-            { r: 129, g: 140, b: 248 },   // indigo  #818cf8
-            { r: 192, g: 132, b: 252 },   // violet  #c084fc
-        ];
-
         const createParticles = (x, y) => {
-            // 1. Themed thrust core particles
-            for (let i = 0; i < 6; i++) {
-                const c = themeColors[Math.floor(Math.random() * themeColors.length)];
+            // High-velocity thrust core (white/blue)
+            const thrustCount = perfProfile.lowPower ? 2 : 4;
+            for (let i = 0; i < thrustCount; i++) {
                 particles.push({
                     x: x,
-                    y: y + (Math.random() - 0.5) * 5,
-                    vx: (Math.random() - 2) * 9 - 5,
-                    vy: (Math.random() - 0.5) * 2.5,
+                    y: y + (Math.random() - 0.5) * 4,
+                    vx: (Math.random() - 2) * 12 - 6,
+                    vy: (Math.random() - 0.5) * 2,
                     life: 1.0,
-                    decay: 0.06 + Math.random() * 0.03,
-                    size: Math.random() * 5 + 2,
-                    color: `rgba(${c.r}, ${c.g}, ${c.b}, ${Math.random() * 0.5 + 0.5})`,
+                    decay: 0.05 + Math.random() * 0.04,
+                    size: Math.random() * 4 + 2,
+                    color: Math.random() > 0.5 ? 'rgba(255, 255, 255, 0.8)' : 'rgba(129, 140, 248, 0.8)',
                     type: 'thrust'
                 });
             }
 
-            // 2. Voluminous purple-toned smoke
-            for (let i = 0; i < 4; i++) {
-                const purpleSmoke = Math.random() > 0.5;
+            // Expanding smoke cloud (dark grey to purple)
+            const smokeCount = perfProfile.lowPower ? 1 : 2;
+            for (let i = 0; i < smokeCount; i++) {
                 particles.push({
-                    x: x - 20,
-                    y: y + (Math.random() - 0.5) * 12,
-                    vx: (Math.random() - 1) * 3.5 - 2,
-                    vy: (Math.random() - 0.5) * 3.5,
+                    x: x - 10,
+                    y: y + (Math.random() - 0.5) * 8,
+                    vx: (Math.random() - 1) * 4 - 2,
+                    vy: (Math.random() - 0.5) * 4,
                     life: 1.0,
-                    decay: 0.012 + Math.random() * 0.005,
-                    size: Math.random() * 14 + 6,
-                    color: purpleSmoke
-                        ? `rgba(139, 92, 246, 0.35)`
-                        : `rgba(100, 100, 130, 0.35)`,
+                    decay: 0.01 + Math.random() * 0.005,
+                    size: Math.random() * 15 + 8,
+                    color: Math.random() > 0.4 ? 'rgba(75, 85, 99, 0.4)' : 'rgba(139, 92, 246, 0.3)',
                     type: 'smoke'
                 });
             }
 
-            // 3. Sparks with theme colors
-            if (Math.random() > 0.4) {
-                const sparkColors = ['#fbbf24', '#f472b6', '#a78bfa', '#34d399'];
+            // Fiery sparks (orange/yellow)
+            if (Math.random() > 0.3) {
                 particles.push({
                     x: x,
-                    y: y,
-                    vx: (Math.random() - 1) * 12 - 5,
-                    vy: (Math.random() - 0.5) * 12,
+                    y: y + (Math.random() - 0.5) * 6,
+                    vx: (Math.random() - 1) * 15 - 5,
+                    vy: (Math.random() - 0.5) * 8,
                     life: 1.0,
-                    decay: 0.025 + Math.random() * 0.01,
+                    decay: 0.03 + Math.random() * 0.02,
                     size: Math.random() * 2 + 1,
-                    color: sparkColors[Math.floor(Math.random() * sparkColors.length)],
+                    color: Math.random() > 0.5 ? '#f59e0b' : '#ef4444',
                     type: 'spark'
                 });
             }
-
-            // 4. Trail segment (gradient fade)
-            trail.push({
-                x: x,
-                y: y,
-                life: 1.0,
-                decay: 0.02
-            });
         };
 
         const drawStars = () => {
             stars.forEach(star => {
-                const alpha = 0.4 + 0.6 * Math.abs(Math.sin(frameCount * star.twinkleSpeed + star.twinkleOffset));
+                const alpha = 0.3 + 0.7 * Math.abs(Math.sin(frameCount * star.twinkleSpeed + star.twinkleOffset));
                 ctx.save();
                 ctx.globalAlpha = alpha;
                 ctx.fillStyle = star.color;
+                ctx.shadowBlur = star.size > 1 ? 4 : 0;
+                ctx.shadowColor = star.color;
                 ctx.beginPath();
                 ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
                 ctx.fill();
-
-                // Sparkle cross for larger stars
-                if (star.size > 1.2) {
-                    ctx.strokeStyle = star.color;
-                    ctx.lineWidth = 0.4;
-                    ctx.globalAlpha = alpha * 0.5;
-                    const len = star.size * 2;
-                    ctx.beginPath();
-                    ctx.moveTo(star.x - len, star.y);
-                    ctx.lineTo(star.x + len, star.y);
-                    ctx.moveTo(star.x, star.y - len);
-                    ctx.lineTo(star.x, star.y + len);
-                    ctx.stroke();
-                }
-
                 ctx.restore();
             });
-        };
-
-        const drawTrail = () => {
-            for (let i = trail.length - 1; i >= 0; i--) {
-                const t = trail[i];
-                t.life -= t.decay;
-                if (t.life <= 0) {
-                    trail.splice(i, 1);
-                    continue;
-                }
-                ctx.save();
-                const grad = ctx.createRadialGradient(t.x, t.y, 0, t.x, t.y, 8);
-                grad.addColorStop(0, `rgba(139, 92, 246, ${t.life * 0.3})`);
-                grad.addColorStop(0.5, `rgba(167, 139, 250, ${t.life * 0.15})`);
-                grad.addColorStop(1, `rgba(139, 92, 246, 0)`);
-                ctx.fillStyle = grad;
-                ctx.beginPath();
-                ctx.arc(t.x, t.y, 8, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.restore();
-            }
         };
 
         const drawRocket = (x, y) => {
             ctx.save();
             ctx.translate(x, y);
 
-            // Engine Glow — purple/pink
-            ctx.shadowBlur = 35;
-            ctx.shadowColor = '#a78bfa';
+            // Ground/Ambient Shadow
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.beginPath();
+            ctx.ellipse(-5, 25, 45, 8, 0, 0, Math.PI * 2);
+            ctx.fill();
 
-            // Main Fuselage — purple-to-pink gradient
+            // Main Fuselage (Metallic realistic)
             const bodyGrad = ctx.createLinearGradient(-45, -12, 45, 12);
-            bodyGrad.addColorStop(0, '#6d28d9');
-            bodyGrad.addColorStop(0.3, '#8b5cf6');
-            bodyGrad.addColorStop(0.5, '#c084fc');
-            bodyGrad.addColorStop(0.7, '#e879f9');
-            bodyGrad.addColorStop(1, '#a855f7');
+            bodyGrad.addColorStop(0, '#e2e8f0');
+            bodyGrad.addColorStop(0.4, '#ffffff');
+            bodyGrad.addColorStop(0.6, '#cbd5e1');
+            bodyGrad.addColorStop(1, '#64748b');
 
             ctx.fillStyle = bodyGrad;
             ctx.beginPath();
             ctx.ellipse(0, 0, 50, 12, 0, 0, Math.PI * 2);
             ctx.fill();
 
-            // Fuselage highlight stripe
-            ctx.shadowBlur = 0;
-            const stripeGrad = ctx.createLinearGradient(-40, -4, 40, -4);
-            stripeGrad.addColorStop(0, 'rgba(255,255,255,0)');
-            stripeGrad.addColorStop(0.3, 'rgba(255,255,255,0.15)');
-            stripeGrad.addColorStop(0.7, 'rgba(255,255,255,0.15)');
-            stripeGrad.addColorStop(1, 'rgba(255,255,255,0)');
-            ctx.fillStyle = stripeGrad;
+            // Fuselage shading & panel lines
+            ctx.strokeStyle = '#94a3b8';
+            ctx.lineWidth = 0.5;
             ctx.beginPath();
-            ctx.ellipse(0, -3, 42, 4, 0, 0, Math.PI * 2);
+            ctx.moveTo(-20, -11);
+            ctx.lineTo(-20, 11);
+            ctx.moveTo(10, -11);
+            ctx.lineTo(10, 11);
+            ctx.stroke();
+
+            // Nose cone accent (Red/Orange)
+            const noseGrad = ctx.createLinearGradient(35, -10, 50, 10);
+            noseGrad.addColorStop(0, '#f87171');
+            noseGrad.addColorStop(1, '#b91c1c');
+            ctx.fillStyle = noseGrad;
+            ctx.beginPath();
+            ctx.moveTo(35, -8.5);
+            ctx.quadraticCurveTo(50, 0, 50, 0);
+            ctx.quadraticCurveTo(50, 0, 35, 8.5);
+            ctx.closePath();
             ctx.fill();
 
-            // Cockpit Window — glowing accent color
-            ctx.shadowBlur = 20;
-            ctx.shadowColor = '#818cf8';
-
-            const windowGrad = ctx.createRadialGradient(22, -4, 1, 22, -4, 11);
-            windowGrad.addColorStop(0, '#ffffff');
-            windowGrad.addColorStop(0.35, '#a5b4fc');
-            windowGrad.addColorStop(0.6, '#818cf8');
-            windowGrad.addColorStop(1, '#4f46e5');
+            // Cockpit Window (Glowing Cyan)
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#06b6d4';
+            const windowGrad = ctx.createRadialGradient(20, -3, 1, 20, -3, 8);
+            windowGrad.addColorStop(0, '#cffafe');
+            windowGrad.addColorStop(0.5, '#22d3ee');
+            windowGrad.addColorStop(1, '#0891b2');
 
             ctx.fillStyle = windowGrad;
             ctx.beginPath();
-            ctx.ellipse(22, -4, 12, 6, 0, 0, Math.PI * 2);
+            ctx.ellipse(20, -4, 10, 5, 0, 0, Math.PI * 2);
             ctx.fill();
 
-            // Window shine
+            // Window shine reflection
             ctx.shadowBlur = 0;
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
             ctx.beginPath();
-            ctx.ellipse(25, -7, 4, 2, -0.4, 0, Math.PI * 2);
+            ctx.ellipse(22, -6, 4, 1.5, -0.2, 0, Math.PI * 2);
             ctx.fill();
 
-            // Rear Fins — dark with purple tint
-            const finGrad = ctx.createLinearGradient(-45, -25, -10, 0);
-            finGrad.addColorStop(0, '#1e1b4b');
-            finGrad.addColorStop(1, '#312e81');
+            // Engine Nozzle (Dark metallic)
+            const nozzleGrad = ctx.createLinearGradient(-40, -15, -40, 15);
+            nozzleGrad.addColorStop(0, '#334155');
+            nozzleGrad.addColorStop(0.5, '#0f172a');
+            nozzleGrad.addColorStop(1, '#334155');
+            ctx.fillStyle = nozzleGrad;
+            ctx.beginPath();
+            ctx.moveTo(-45, -8);
+            ctx.lineTo(-58, -12);
+            ctx.lineTo(-58, 12);
+            ctx.lineTo(-45, 8);
+            ctx.closePath();
+            ctx.fill();
+
+            // Inner Engine Glow
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#3b82f6';
+            ctx.fillStyle = '#60a5fa';
+            ctx.beginPath();
+            ctx.ellipse(-56, 0, 4, 10, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Fins (Dark with sharp edges)
+            const finGrad = ctx.createLinearGradient(-40, -30, -10, 0);
+            finGrad.addColorStop(0, '#1e293b');
+            finGrad.addColorStop(1, '#475569');
 
             ctx.fillStyle = finGrad;
             // Top Fin
             ctx.beginPath();
-            ctx.moveTo(-20, -10);
-            ctx.lineTo(-48, -28);
-            ctx.lineTo(-10, -5);
+            ctx.moveTo(-15, -10);
+            ctx.lineTo(-35, -28);
+            ctx.lineTo(-45, -28);
+            ctx.lineTo(-35, -8);
             ctx.closePath();
             ctx.fill();
             // Bottom Fin
             ctx.beginPath();
-            ctx.moveTo(-20, 10);
-            ctx.lineTo(-48, 28);
-            ctx.lineTo(-10, 5);
+            ctx.moveTo(-15, 10);
+            ctx.lineTo(-35, 28);
+            ctx.lineTo(-45, 28);
+            ctx.lineTo(-35, 8);
             ctx.closePath();
             ctx.fill();
 
-            // Engine Nozzle — darker with glow
-            const nozzleGrad = ctx.createLinearGradient(-40, 0, -58, 0);
-            nozzleGrad.addColorStop(0, '#4c1d95');
-            nozzleGrad.addColorStop(1, '#1e1b4b');
-            ctx.fillStyle = nozzleGrad;
+            // Accent Glow Light (bottom belly)
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = '#ef4444';
+            ctx.fillStyle = '#ef4444';
             ctx.beginPath();
-            ctx.moveTo(-40, -9);
-            ctx.lineTo(-58, -14);
-            ctx.lineTo(-58, 14);
-            ctx.lineTo(-40, 9);
-            ctx.closePath();
-            ctx.fill();
-
-            // Inner nozzle glow
-            ctx.fillStyle = 'rgba(167, 139, 250, 0.4)';
-            ctx.beginPath();
-            ctx.moveTo(-45, -5);
-            ctx.lineTo(-56, -8);
-            ctx.lineTo(-56, 8);
-            ctx.lineTo(-45, 5);
-            ctx.closePath();
+            ctx.arc(-5, 11, 2, 0, Math.PI * 2);
             ctx.fill();
 
             ctx.restore();
         };
 
-        const render = () => {
+        const render = (timestamp = 0) => {
+            animationId = requestAnimationFrame(render);
+            if (!isDocumentVisible) return;
+            if (timestamp - lastFrame < frameInterval) return;
+            lastFrame = timestamp - ((timestamp - lastFrame) % frameInterval);
+
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             frameCount++;
 
-            // 1. Background stars
             drawStars();
 
-            // 2. Trail
-            drawTrail();
-
-            // 3. Particles
+            // Update & Draw Particles
             for (let i = particles.length - 1; i >= 0; i--) {
                 const p = particles[i];
                 p.x += p.vx;
@@ -297,14 +261,15 @@ const ThankYouCar = () => {
                     ctx.globalAlpha = p.life;
                     ctx.fillStyle = p.color;
 
-                    if (p.type === 'spark') {
-                        // Spark glow
-                        ctx.shadowBlur = 6;
+                    if (p.type === 'spark' || p.type === 'thrust') {
+                        ctx.shadowBlur = 8;
                         ctx.shadowColor = p.color;
                     }
 
                     ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.size * (p.type === 'smoke' ? (2 - p.life) : 1), 0, Math.PI * 2);
+                    // Smoke expands as it ages
+                    const currentSize = p.type === 'smoke' ? p.size * (2 - p.life) : p.size;
+                    ctx.arc(p.x, p.y, currentSize, 0, Math.PI * 2);
                     ctx.fill();
                     ctx.restore();
                 } else {
@@ -312,98 +277,46 @@ const ThankYouCar = () => {
                 }
             }
 
-            // 4. Rocket movement — continuous loop
-            const rocketY = rocketBaseY + Math.sin(frameCount * 0.04) * 4;
+            // Rocket Flight Path (Sine wave)
+            const rocketY = rocketBaseY + Math.sin(frameCount * 0.05) * 4;
 
-            if (rocketX < canvas.width + 160) {
-                rocketX += 3.5;
-                createParticles(rocketX - 58, rocketY);
-
-                // Trigger text when rocket passes center
-                if (!textTriggeredRef.current && rocketX >= canvas.width * 0.45) {
-                    textTriggeredRef.current = true;
-                    setShowText(true);
-                }
+            if (rocketX < canvas.width + 150) {
+                rocketX += perfProfile.lowPower ? 12 : 18;
+                createParticles(rocketX - 55, rocketY);
             } else {
-                // Reset for continuous loop
+                // Loop
                 rocketX = -150;
-                textTriggeredRef.current = false;
-                setShowText(false);
             }
 
             drawRocket(rocketX, rocketY);
-
-            animationId = requestAnimationFrame(render);
         };
 
-        render();
+        animationId = requestAnimationFrame(render);
 
         return () => {
             window.removeEventListener('resize', init);
-            cancelAnimationFrame(animationId);
+            document.removeEventListener('visibilitychange', handleVisibility);
+            if (animationId) cancelAnimationFrame(animationId);
         };
-    }, []);
+    }, [isNearViewport, perfProfile.lowPower, perfProfile.reducedMotion]);
 
     return (
-        <div style={{ width: '100%', padding: 0, overflow: 'hidden', position: 'relative' }}>
+        <div ref={containerRef} style={{ width: '100%', height: '150px', padding: 0, position: 'relative' }}>
             <canvas
                 ref={canvasRef}
-                style={{ width: '100%', height: '150px', display: 'block' }}
+                style={{ 
+                    position: 'absolute', 
+                    top: '-50px', 
+                    left: 0, 
+                    width: '100%', 
+                    height: '250px', 
+                    display: 'block',
+                    pointerEvents: 'none',
+                    zIndex: 10
+                }}
             />
 
-            {/* Typewriter text overlay */}
-            <div
-                className={`thankyou-text ${showText ? 'thankyou-text--visible' : ''}`}
-            >
-                {displayedText}
-                <span className="thankyou-cursor">|</span>
-            </div>
-
             <style>{`
-                .thankyou-text {
-                    position: absolute;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    font-family: var(--font-heading, 'Inter', sans-serif);
-                    font-size: 1.4rem;
-                    font-weight: 700;
-                    letter-spacing: 0.03em;
-                    white-space: nowrap;
-                    pointer-events: none;
-                    opacity: 0;
-                    transition: opacity 0.5s ease;
-                    background: linear-gradient(135deg, #a78bfa, #f472b6, #fbbf24);
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                    background-clip: text;
-                    text-shadow: none;
-                    filter: drop-shadow(0 0 12px rgba(167, 139, 250, 0.4));
-                }
-
-                .thankyou-text--visible {
-                    opacity: 1;
-                }
-
-                @keyframes blink {
-                    0%, 50% { opacity: 1; }
-                    51%, 100% { opacity: 0; }
-                }
-
-                .thankyou-cursor {
-                    animation: blink 0.8s step-end infinite;
-                    background: linear-gradient(135deg, #a78bfa, #f472b6);
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                    background-clip: text;
-                    margin-left: 1px;
-                }
-
-                @media (max-width: 600px) {
-                    .thankyou-text {
-                        font-size: 1rem;
-                    }
-                }
             `}</style>
         </div>
     );

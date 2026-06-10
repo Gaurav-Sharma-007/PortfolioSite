@@ -20,7 +20,7 @@ const OdometerDigit = ({ digit, animate, delay }) => {
       <span
         className="odometer-digit-strip"
         style={{
-          transform: `translateY(${-offset * 100}%)`,
+          transform: `translateY(${-offset * 10}%)`,
           transition: `transform 1.4s cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms`,
         }}
       >
